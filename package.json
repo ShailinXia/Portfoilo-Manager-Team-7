@@ -1,0 +1,24 @@
+{
+  "name": "portfoilo-manager-team-7",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShailinXia/Portfoilo-Manager-Team-7.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ShailinXia/Portfoilo-Manager-Team-7/issues"
+  },
+  "homepage": "https://github.com/ShailinXia/Portfoilo-Manager-Team-7#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
