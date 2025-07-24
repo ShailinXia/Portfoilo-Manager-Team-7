@@ -14,11 +14,10 @@
 
 ## 🤪Prerequisites
 
-- Node.js
+> - Node.js Reference version: `v20.19.4`
+> - npm (Node Package Manager)
 
-- npm (Node Package Manager)
-
-```
+```bash
 # Installation Instructions
 
 # 1. Convert to the project directory
@@ -33,23 +32,35 @@ npm install
 
 npm install axios 
 
-npm run dev
+# 3. Finally, `cd ../dummydata`
+
+npm install express better-sqlite3 xlsx
+
 ```
+> If your environment version is not the same as the reference version, maybe you need to rebuild the `better-sqlite3` package
 
 ## 🚀Usage
 
-```
+```bash
 # Set up the terminal authentication in the project root directory
 
+MacOS/Linux:
 chmod +x start.sh
 
+Windows: 
+Please use git bash to run the script
+chmod +x start.sh
+
+MacOS/Linux:
+chmod +x stop.sh
+
+Windows: 
+Please use git bash to run the script
 chmod +x stop.sh
 
 # Start the whole server
-
 ./start.sh
 
 # Stop the whole server
-
 ./stop.sh
 ```
