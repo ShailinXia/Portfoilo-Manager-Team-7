@@ -5,6 +5,8 @@ const express = require('express');
 const stocksRouter = require('./routes/stocks');
 const fundsRouter = require('./routes/funds'); // 加入基金路由
 const app = express();
+const cors = require("cors");
+app.use(cors()); // 使用 CORS 中间件
 
 app.use(express.json());
 app.use('/api/stocks', stocksRouter);

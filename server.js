@@ -7,12 +7,14 @@ const app = express();
 const PORT = 8080; // 端口号可以根据需要修改
 
 // 允许跨域请求
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // 允许所有域名访问
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // 允许的HTTP方法
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // 允许的请求头
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', '*'); // 允许所有域名访问
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // 允许的HTTP方法
+//   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // 允许的请求头
+//   next();
+// });
+
+app.use(cors()); // 使用 CORS 中间件
 
 // 解析 JSON 请求体
 app.use(express.json());
@@ -35,7 +37,6 @@ axios.get('http://localhost:3000/api/stocks?page=1&limit=50&order=desc')
 // 示例 API 路由
 app.get("/api/stocks", (req, res) => {
   if (stockData) {
-    res.setHeater('Access-Control-Allow-Origin','*'); // 设置 CORS 头部
     res.json(stockData); // 返回 JSON 格式数据
   } else {
     res.status(503).json({ error: '数据未准备好' });
