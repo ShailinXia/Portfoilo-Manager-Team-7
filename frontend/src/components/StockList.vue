@@ -73,7 +73,6 @@ export default {
         //TODO: Adjust the URL to match your backend API endpoint
         const response = await axios.get('http://localhost:8080/api/stocks');
         this.stocks = response.data;
-        console.log('获取到的股票数据:', response);
         this.filteredStocks = [...this.stocks];
       } catch (err) {
         console.error('获取股票数据失败:', err);
