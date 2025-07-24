@@ -13,9 +13,6 @@ echo "Initializing database..."
   node scripts/initdb.js
 )
 
-# 延时函数
-sleep 1m
-
 # 新建日志文件
 touch "./$LOG_DIR/data.log" "./$LOG_DIR/server.log" "./$LOG_DIR/vue.log"
 
@@ -25,6 +22,9 @@ echo "Starting data.js..."
   cd ./dummydata || exit
   node app.js > "../$LOG_DIR/data.log" 2>&1 & // 启动 data.js 并将输出重定向到 data.log
 )
+
+# 延时函数
+sleep 25 # 等待 25 秒以确保 data 服务启动完成
 
 # 启动后端服务
 echo "Starting server.js..."

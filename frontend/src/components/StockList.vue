@@ -6,12 +6,7 @@
     <div v-if="error" class="error">{{ error }}</div>
 
     <div class="search-bar">
-      <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="搜索股票名称或代码..."
-          @input="filterStocks"
-      />
+      <input type="text" v-model="searchQuery" placeholder="搜索股票名称或代码..." @input="filterStocks" />
     </div>
 
     <div class="stock-grid">
@@ -21,13 +16,12 @@
           <span class="stock-code">{{ stock.code }}</span>
         </div>
 
-        <div class="stock-price">
+        <!-- //BUG: 延时渲染 -->
+        <div class="stock-price" v-if="stock.change_percent != null">
           <span class="price">¥{{ stock.latest_price.toFixed(2) }}</span>
-          <span
-              class="change"
-              :class="{ 'up': stock.change_percent > 0, 'down': stock.change_percent < 0 }"
-          >
-            {{ stock.change_percent > 0 ? '+' : '' }}{{ stock.change_percent.toFixed(2) }}%
+          <span class="change" :class="{ 'up': stock.change_percent >= 0, 'down': stock.change_percent < 0 }">
+            <!-- //FIXME: Security Code Bug: stock.change_percent >= 0 ? -->
+            {{ stock.change_percent >= 0 ? '+' : '' }}{{ stock.change_percent.toFixed(2) }}%
           </span>
         </div>
 
@@ -77,7 +71,7 @@ export default {
       this.error = null;
       try {
         //TODO: Adjust the URL to match your backend API endpoint
-        const response = await axios.get('http://localhost:8080/api/stocks'); 
+        const response = await axios.get('http://localhost:8080/api/stocks');
         this.stocks = response.data;
         this.filteredStocks = [...this.stocks];
       } catch (err) {
@@ -95,8 +89,8 @@ export default {
 
       const query = this.searchQuery.toLowerCase();
       this.filteredStocks = this.stocks.filter(stock =>
-          stock.name.toLowerCase().includes(query) ||
-          stock.code.includes(query)
+        stock.name.toLowerCase().includes(query) ||
+        stock.code.includes(query)
       );
     }
   }
@@ -117,7 +111,8 @@ h1 {
   margin-bottom: 20px;
 }
 
-.loading, .error {
+.loading,
+.error {
   text-align: center;
   padding: 20px;
   margin: 20px 0;
