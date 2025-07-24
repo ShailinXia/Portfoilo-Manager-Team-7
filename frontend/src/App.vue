@@ -1,5 +1,5 @@
 <script setup>
-import PortfolioManager from 'C:/Users/Administrator/portfolio-manager/src/components/PortfolioManager.vue'
+import PortfolioManager from '/Users/shailinxia/Projects/Presentation/Portfoilo-Manager-Team-7/frontend/src/components/PortfolioManager.vue'; // Adjust the path as necessary
 </script>
 
 <template>
