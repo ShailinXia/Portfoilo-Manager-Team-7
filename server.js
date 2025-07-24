@@ -20,26 +20,32 @@ app.use(cors()); // 使用 CORS 中间件
 app.use(express.json());
 
 // 示例：在 Node.js 端调用 API
-const axios = require('axios');
+const axios = require("axios");
 
 let stockData = null;
 
 // 启动时获取一次数据并保存为 JSON
-axios.get('http://localhost:3000/api/stocks?page=1&limit=50&order=desc')
-  .then(response => {
-    stockData = response.data; // 保存为 JSON 格式
-    console.log('股票数据:', stockData);
-  })
-  .catch(error => {
-    console.error('请求失败:', error);
-  });
+function fetchStockData() {
+  axios
+    .get("http://localhost:3000/api/stocks?page=1&limit=50&order=desc")
+    .then((response) => {
+      stockData = response.data; // 保存为 JSON 格式
+      console.log("股票数据:", stockData);
+    })
+    .catch((error) => {
+      console.error("请求失败:", error);
+    });
+}
+
+fetchStockData(); // 启动时获取一次数据
+
 
 // 示例 API 路由
 app.get("/api/stocks", (req, res) => {
   if (stockData) {
     res.json(stockData); // 返回 JSON 格式数据
   } else {
-    res.status(503).json({ error: '数据未准备好' });
+    res.status(503).json({ error: "数据未准备好" });
   }
 });
 

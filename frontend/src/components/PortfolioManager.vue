@@ -22,24 +22,14 @@
         <div class="portfolio-list">
           <h2>我的投资组合</h2>
           <div class="search-bar">
-<<<<<<< HEAD
             <input 
               type="text" 
               v-model="searchQuery" 
-=======
-            <input
-              type="text"
-              v-model="searchQuery"
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
               placeholder="搜索投资项目..."
               @input="filterPortfolio"
             />
           </div>
-<<<<<<< HEAD
-          
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
           <ul class="investment-items">
             <li v-for="item in filteredItems" :key="item.id" class="investment-item">
               <div class="item-info">
@@ -70,49 +60,28 @@
                 <option value="other">其他</option>
               </select>
             </div>
-<<<<<<< HEAD
-            
+
             <div class="form-group">
               <label for="investment-name">名称</label>
               <input 
                 type="text" 
                 id="investment-name" 
                 v-model="newInvestment.name" 
-=======
-
-            <div class="form-group">
-              <label for="investment-name">名称</label>
-              <input
-                type="text"
-                id="investment-name"
-                v-model="newInvestment.name"
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
                 required
                 placeholder="例如: 苹果公司"
               />
             </div>
-<<<<<<< HEAD
-            
+
             <div class="form-group">
               <label for="investment-symbol">代码/符号</label>
               <input 
                 type="text" 
                 id="investment-symbol" 
                 v-model="newInvestment.symbol" 
-=======
-
-            <div class="form-group">
-              <label for="investment-symbol">代码/符号</label>
-              <input
-                type="text"
-                id="investment-symbol"
-                v-model="newInvestment.symbol"
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
                 required
                 placeholder="例如: AAPL"
               />
             </div>
-<<<<<<< HEAD
             
             <div class="form-group">
               <label for="investment-amount">投资金额</label>
@@ -136,31 +105,6 @@
               />
             </div>
             
-=======
-
-            <div class="form-group">
-              <label for="investment-amount">投资金额</label>
-              <input
-                type="number"
-                id="investment-amount"
-                v-model="newInvestment.amount"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="investment-date">购买日期</label>
-              <input
-                type="date"
-                id="investment-date"
-                v-model="newInvestment.purchaseDate"
-                required
-              />
-            </div>
-
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
             <button type="submit" class="add-btn">添加到组合</button>
           </form>
         </div>
@@ -174,11 +118,7 @@
             <canvas ref="performanceChart"></canvas>
           </div>
         </div>
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
         <div class="allocation-chart">
           <h2>资产分配</h2>
           <div class="chart-container">
@@ -287,43 +227,24 @@ export default {
         this.filteredItems = [...this.portfolioItems];
         return;
       }
-<<<<<<< HEAD
-      
       const query = this.searchQuery.toLowerCase();
       this.filteredItems = this.portfolioItems.filter(item => 
         item.name.toLowerCase().includes(query) || 
-=======
-
-      const query = this.searchQuery.toLowerCase();
-      this.filteredItems = this.portfolioItems.filter(item =>
-        item.name.toLowerCase().includes(query) ||
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
         item.symbol.toLowerCase().includes(query) ||
         item.type.toLowerCase().includes(query)
       );
     },
     addInvestment() {
       // 在实际应用中，这里会有API调用
-<<<<<<< HEAD
       const newId = this.portfolioItems.length > 0 
         ? Math.max(...this.portfolioItems.map(item => item.id)) + 1 
         : 1;
       
-=======
-      const newId = this.portfolioItems.length > 0
-        ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-        : 1;
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       // 模拟计算当前价值和收益
       const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
       const profit = currentValue - this.newInvestment.amount;
       const profitPercentage = (profit / this.newInvestment.amount) * 100;
-<<<<<<< HEAD
-      
-=======
-
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       const newItem = {
         id: newId,
         name: this.newInvestment.name,
@@ -335,17 +256,10 @@ export default {
         profit: parseFloat(profit.toFixed(2)),
         profitPercentage: parseFloat(profitPercentage.toFixed(2))
       };
-<<<<<<< HEAD
       
       this.portfolioItems.push(newItem);
       this.filterPortfolio();
       
-=======
-
-      this.portfolioItems.push(newItem);
-      this.filterPortfolio();
-
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       // 重置表单
       this.newInvestment = {
         type: 'stock',
@@ -354,11 +268,7 @@ export default {
         amount: 0,
         purchaseDate: new Date().toISOString().split('T')[0]
       };
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       this.updateCharts();
     },
     confirmDelete(item) {
@@ -374,11 +284,7 @@ export default {
     },
     initCharts() {
       Chart.register(...registerables);
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       // 性能图表
       const performanceCtx = this.$refs.performanceChart.getContext('2d');
       this.performanceChart = new Chart(performanceCtx, {
@@ -394,11 +300,7 @@ export default {
           }
         }
       });
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       // 资产分配图表
       const allocationCtx = this.$refs.allocationChart.getContext('2d');
       this.allocationChart = new Chart(allocationCtx, {
@@ -418,11 +320,6 @@ export default {
     updateCharts() {
       this.performanceChart.data = this.getPerformanceChartData();
       this.performanceChart.update();
-<<<<<<< HEAD
-      
-=======
-
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       this.allocationChart.data = this.getAllocationChartData();
       this.allocationChart.update();
     },
@@ -431,11 +328,7 @@ export default {
       const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
       const currentMonth = new Date().getMonth();
       const labels = months.slice(0, currentMonth + 1);
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       // 模拟增长数据
       const data = [];
       let value = this.totalValue * 0.7; // 起始值为当前总价值的70%
@@ -443,11 +336,7 @@ export default {
         data.push(value);
         value *= (1 + (Math.random() * 0.1 - 0.02)); // 随机增长
       }
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       return {
         labels,
         datasets: [{
@@ -461,22 +350,14 @@ export default {
     },
     getAllocationChartData() {
       const types = {};
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       this.portfolioItems.forEach(item => {
         if (!types[item.type]) {
           types[item.type] = 0;
         }
         types[item.type] += item.currentValue;
       });
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       const typeNames = Object.keys(types);
       const backgroundColors = [
         'rgba(255, 99, 132, 0.7)',
@@ -485,11 +366,7 @@ export default {
         'rgba(75, 192, 192, 0.7)',
         'rgba(153, 102, 255, 0.7)'
       ];
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
       return {
         labels: typeNames,
         datasets: [{
@@ -762,11 +639,6 @@ h2 {
   .content {
     flex-direction: column;
   }
-<<<<<<< HEAD
-  
-=======
-
->>>>>>> 4de45d365211bc4cfea2dea54301aee7b9528fe0
   .right-panel {
     width: 100%;
   }
