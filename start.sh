@@ -4,7 +4,7 @@
 LOG_DIR="log"
 
 # 创建 log 文件夹（如果不存在）
-mkdir -p "$LOG_DIR"
+mkdir -p "$LOG_DIR" "dummydata/db"
 
 # 初始化数据库
 echo "Initializing database..."
