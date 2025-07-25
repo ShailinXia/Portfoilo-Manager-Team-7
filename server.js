@@ -23,6 +23,7 @@ app.use(express.json());
 const axios = require("axios");
 
 let stockData = null;
+let stockHistory = null;
 
 // 启动时获取一次数据并保存为 JSON
 function fetchStockData() {
@@ -37,13 +38,37 @@ function fetchStockData() {
     });
 }
 
+// 启动时获取一次数据并保存为 JSON StockHistory
+function fetchHistoryStockData() {
+  axios
+    .get("http://localhost:3000/api/stocks/000001/history?start=2025-01-01&end=2025-07-31")
+    .then((response) => {
+      stockHistory = response.data; // 保存为 JSON 格式
+      console.log("股票历史数据:", stockHistory);
+    })
+    .catch((error) => {
+      console.error("请求失败:", error);
+    });
+}
+
 fetchStockData(); // 启动时获取一次数据
+fetchHistoryStockData(); // 启动时获取一次历史数据
+
 
 
 // 示例 API 路由
 app.get("/api/stocks", (req, res) => {
   if (stockData) {
     res.json(stockData); // 返回 JSON 格式数据
+  } else {
+    res.status(503).json({ error: "数据未准备好" });
+  }
+});
+
+// 路由获取股票历史数据
+app.get("/api/stocks/000001/history", (req, res) => {
+  if (stockHistory) {
+    res.json(stockHistory); // 返回 JSON 格式数据
   } else {
     res.status(503).json({ error: "数据未准备好" });
   }

@@ -5,15 +5,18 @@ import PortfolioManager from './components/PortfolioManager.vue';
 <template>
   <PortfolioManager />
   <StockList />
+  <!-- <StockHistory /> -->
 
 </template>
 <script>
 import StockList from './components/StockList.vue';
+// import StockHistory from './components/StockHistory.vue';
 
 export default {
   name: 'App',
   components: {
-    StockList
+    StockList,
+    // StockHistory,
   }
 };
 </script>
