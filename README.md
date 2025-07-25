@@ -22,7 +22,7 @@
 
 cd Portfoilo-Manager-Team-7
 
-npm install express cors
+npm install express cors axios
 
 # 2. And then `cd frontend`
 
