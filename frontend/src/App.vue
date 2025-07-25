@@ -26,6 +26,7 @@
 <!--</style>-->
 
 <script setup>
+
 import { ref, onMounted } from 'vue';
 import LoginView from './views/LoginView.vue';
 import PortfolioManager from './components/PortfolioManager.vue';
@@ -49,6 +50,9 @@ const handleLogout = () => {
   isAuthenticated.value = false;
   activeTab.value = 'portfolio'; // 重置选项卡
 };
+// =======
+// import PortfolioManager from 'C:/Users/Administrator/Portfoilo-Manager-Team-7/frontend/src/components/PortfolioManager.vue'; // Adjust the path as necessary
+// >>>>>>> c6db412e21cdf5caa45eb22927780f95a6a24f93
 </script>
 
 <template>
