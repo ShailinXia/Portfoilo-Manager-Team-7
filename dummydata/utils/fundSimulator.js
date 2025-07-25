@@ -28,6 +28,6 @@ function simulateFundNetValue() {
 }
 
 // 每分钟模拟一次
-setInterval(simulateFundNetValue, 60 * 1000);
+setInterval(simulateFundNetValue, 10 * 1000);
 
 module.exports = { simulateFundNetValue };

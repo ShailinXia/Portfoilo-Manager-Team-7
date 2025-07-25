@@ -1,42 +1,54 @@
-const express = require('express');
-const db = require('../config/db');
+const express = require("express");
+const db = require("../config/db");
+// const { getDistinctStockCodes } = require('../utils/filterField');
 const router = express.Router();
 
 // 获取所有股票列表，支持分页、按市值/涨跌幅排序
-router.get('/', (req, res) => {
-  const { page = 1, limit = 20, sort = 'market_cap', order = 'desc' } = req.query;
+router.get("/", (req, res) => {
+  const {
+    page = 1,
+    limit = 20,
+    sort = "market_cap",
+    order = "desc",
+  } = req.query;
   const offset = (page - 1) * limit;
 
   // 只允许特定字段排序
-  const allowedSort = ['market_cap', 'change_percent'];
-  const sortField = allowedSort.includes(sort) ? sort : 'market_cap';
-  const sortOrder = order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  const allowedSort = ["market_cap", "change_percent"];
+  const sortField = allowedSort.includes(sort) ? sort : "market_cap";
+  const sortOrder = order.toLowerCase() === "asc" ? "ASC" : "DESC";
 
   // 查询所有股票
-  const stocks = db.prepare('SELECT * FROM stocks LIMIT ? OFFSET ?').all(Number(limit), Number(offset));
+  const stocks = db
+    .prepare("SELECT * FROM stocks LIMIT ? OFFSET ?")
+    .all(Number(limit), Number(offset));
 
   // 动态计算涨跌幅
-  const stocksWithChange = stocks.map(stock => {
-    const prev = db.prepare(
-      'SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
-    ).get(stock.code);
+  const stocksWithChange = stocks.map((stock) => {
+    const prev = db
+      .prepare(
+        "SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1"
+      )
+      .get(stock.code);
     let change_percent = null;
     if (prev && prev.price) {
-      change_percent = Number(((stock.latest_price - prev.price) / prev.price * 100).toFixed(2));
+      change_percent = Number(
+        (((stock.latest_price - prev.price) / prev.price) * 100).toFixed(2)
+      );
     }
     return { ...stock, change_percent };
   });
 
   // 排序
   stocksWithChange.sort((a, b) => {
-    if (sortField === 'market_cap') {
+    if (sortField === "market_cap") {
       // 市值排序（假设 market_cap 为数字，若为字符串需转换）
-      return sortOrder === 'ASC'
+      return sortOrder === "ASC"
         ? Number(a.market_cap) - Number(b.market_cap)
         : Number(b.market_cap) - Number(a.market_cap);
     } else {
       // 涨跌幅排序
-      return sortOrder === 'ASC'
+      return sortOrder === "ASC"
         ? (a.change_percent ?? -Infinity) - (b.change_percent ?? -Infinity)
         : (b.change_percent ?? -Infinity) - (a.change_percent ?? -Infinity);
     }
@@ -45,44 +57,129 @@ router.get('/', (req, res) => {
   res.json(stocksWithChange);
 });
 
-// 获取单只股票详情（动态计算涨跌幅）
-router.get('/:code', (req, res) => {
-  const { code } = req.params;
-  const stock = db.prepare('SELECT * FROM stocks WHERE code = ?').get(code);
-  if (!stock) return res.status(404).json({ error: '未找到该股票' });
+// NOTE:静态路由优先于动态路由，动态路由放在最后
+// 获取所有股票名称
+router.get("/names", (req, res) => {
+  // 获取分页参数，默认 page=1, pageSize=10
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
 
-  const prev = db.prepare(
-    'SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
-  ).get(code);
+  try {
+    const rows = db
+      .prepare(
+        "SELECT stocks.name FROM stocks JOIN stock_history ON stocks.code = stock_history.stock_code LIMIT ? OFFSET ?"
+      )
+      .all(pageSize, offset);
+
+    console.log(`第 ${page} 页的股票名称:`, rows);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "未找到股票名称" });
+    } else {
+      res.json(rows);
+    }
+  } catch (err) {
+    console.error("数据库查询失败:", err);
+    res.status(500).json({ error: "服务器内部错误" });
+  }
+});
+
+// 获取所有股票代码
+router.get("/codes", (req, res) => {
+  // 从 query 中获取分页参数，默认 page=1, pageSize=10
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    // 查询总数
+    const total = db
+      .prepare("SELECT COUNT(DISTINCT stock_code) AS count FROM stock_history")
+      .get().count;
+
+    // 查询分页数据，以名称展示
+    const rows = db
+      .prepare(
+        `
+      SELECT DISTINCT stocks.name 
+      FROM stocks 
+      join stock_history 
+      on stocks.code=stock_history.stock_code
+      LIMIT ? OFFSET ?
+    `
+      )
+      .all(pageSize, offset);
+
+    // // 查询分页数据，以code形式展示
+    // const rows = db.prepare(`
+    //   SELECT DISTINCT stock_code
+    //   FROM stock_history
+    //   LIMIT ? OFFSET ?
+    // `).all(pageSize, offset);
+
+    // 返回分页数据和元信息
+    res.json({
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+      data: rows,
+    });
+  } catch (err) {
+    console.error("分页查询出错:", err);
+    res.status(500).json({ error: "数据库错误" });
+  }
+});
+
+// 获取单只股票详情（动态计算涨跌幅）
+router.get("/:code", (req, res) => {
+  const { code } = req.params;
+  const stock = db.prepare("SELECT * FROM stocks WHERE code = ?").get(code);
+  if (!stock) return res.status(404).json({ error: "未找到该股票" });
+
+  const prev = db
+    .prepare(
+      "SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1"
+    )
+    .get(code);
 
   let change_percent = null;
   if (prev && prev.price) {
-    change_percent = Number(((stock.latest_price - prev.price) / prev.price * 100).toFixed(2));
+    change_percent = Number(
+      (((stock.latest_price - prev.price) / prev.price) * 100).toFixed(2)
+    );
   }
 
   res.json({ ...stock, change_percent });
 });
 
 // 获取股票简要信息（代码、名称、最新价、涨跌幅）
-router.get('/:code/brief', (req, res) => {
+router.get("/:code/brief", (req, res) => {
   const { code } = req.params;
-  const stock = db.prepare('SELECT code, name, latest_price FROM stocks WHERE code = ?').get(code);
-  if (!stock) return res.status(404).json({ error: '未找到该股票' });
+  const stock = db
+    .prepare("SELECT code, name, latest_price FROM stocks WHERE code = ?")
+    .get(code);
+  if (!stock) return res.status(404).json({ error: "未找到该股票" });
 
-  const prev = db.prepare(
-    'SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
-  ).get(code);
+  const prev = db
+    .prepare(
+      "SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1"
+    )
+    .get(code);
 
   let change_percent = null;
   if (prev && prev.price) {
-    change_percent = Number(((stock.latest_price - prev.price) / prev.price * 100).toFixed(2));
+    change_percent = Number(
+      (((stock.latest_price - prev.price) / prev.price) * 100).toFixed(2)
+    );
   }
 
   res.json({ ...stock, change_percent });
 });
 
 // 获取单只股票历史价格，只返回日期和价格
-router.get('/:code/history', (req, res) => {
+router.get("/:code/history", (req, res) => {
   const { code } = req.params;
   const { start, end } = req.query;
 
@@ -94,17 +191,17 @@ router.get('/:code/history', (req, res) => {
   const params = [code];
 
   if (start && end) {
-    sql += ' AND date BETWEEN ? AND ?';
+    sql += " AND date BETWEEN ? AND ?";
     params.push(start, end);
   } else if (start) {
-    sql += ' AND date >= ?';
+    sql += " AND date >= ?";
     params.push(start);
   } else if (end) {
-    sql += ' AND date <= ?';
+    sql += " AND date <= ?";
     params.push(end);
   }
 
-  sql += ' ORDER BY date ASC';
+  sql += " ORDER BY date ASC";
 
   const rows = db.prepare(sql).all(...params);
   res.json(rows);
