@@ -7,11 +7,20 @@
           <h3>总价值</h3>
           <p class="value">{{ formatCurrency(totalValue) }}</p>
         </div>
+
         <div class="summary-card">
           <h3>总收益</h3>
           <p class="value" :class="{ positive: totalProfit >= 0, negative: totalProfit < 0 }">
             {{ formatCurrency(totalProfit) }} ({{ profitPercentage }}%)
           </p>
+        </div>
+        <div class="summary-card">
+          <h3>持仓数量</h3>
+          <p class="value">{{ portfolioItems.length }}</p>
+        </div>
+        <div class="summary-card">
+          <h3>今日涨跌</h3>
+          <p class="value"> {{ formatCurrency(dailyChange) }} ({{ dailyChangePercentage }}%)</p>
         </div>
       </div>
     </div>
@@ -22,11 +31,12 @@
         <div class="portfolio-list">
           <h2>我的投资组合</h2>
           <div class="search-bar">
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="搜索投资项目..."
-              @input="filterPortfolio"
+            <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="搜索投资项目..."
+                @input="filterPortfolio"
+
             />
           </div>
 
@@ -97,11 +107,12 @@
             
             <div class="form-group">
               <label for="investment-date">购买日期</label>
-              <input 
-                type="date" 
-                id="investment-date" 
-                v-model="newInvestment.purchaseDate" 
-                required
+              <input
+                  type="date"
+                  id="investment-date"
+                  v-model="newInvestment.purchaseDate"
+                  required
+
               />
             </div>
             
@@ -112,13 +123,31 @@
 
       <!-- 右侧 - 投资组合表现图表 -->
       <div class="right-panel">
+        <!-- 股票历史数据图表 -->
         <div class="performance-chart">
-          <h2>投资组合表现</h2>
-          <div class="chart-container">
-            <canvas ref="performanceChart"></canvas>
+          <h2>股票历史数据 (代码: 000001)</h2>
+          <div v-if="chartError" class="error">{{ chartError }}</div>
+          <div class="chart-wrapper">
+            <canvas ref="stockChartCanvas"></canvas>
+          </div>
+          <div class="controls-container">
+            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">
+              {{ chartLoading ? '加载中...' : '刷新数据' }}
+            </button>
+            <div class="date-range-container">
+              <div class="date-input-group">
+                <label>开始日期: </label>
+                <input type="date" v-model="chartStartDate" :disabled="chartLoading" />
+              </div>
+              <div class="date-input-group">
+                <label>结束日期: </label>
+                <input type="date" v-model="chartEndDate" :disabled="chartLoading" />
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- 资产分配图表 -->
         <div class="allocation-chart">
           <h2>资产分配</h2>
           <div class="chart-container">
@@ -144,6 +173,7 @@
 
 <script>
 import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 
 export default {
   name: 'PortfolioManager',
@@ -195,8 +225,15 @@ export default {
       filteredItems: [],
       showDeleteModal: false,
       itemToDelete: null,
-      performanceChart: null,
-      allocationChart: null
+      allocationChart: null,
+      
+      // 股票图表相关数据
+      chartInstance: null,
+      chartHistory: [],
+      chartStartDate: '2025-01-01',
+      chartEndDate: '2025-07-31',
+      chartLoading: false,
+      chartError: null
     };
   },
   computed: {
@@ -209,11 +246,29 @@ export default {
     profitPercentage() {
       const totalInvested = this.portfolioItems.reduce((sum, item) => sum + item.amount, 0);
       return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
+    },
+    dailyChange() {
+      // 模拟每日涨跌 - 实际应用中应从API获取
+      return (Math.random() * 200 - 100).toFixed(2);
+    },
+    dailyChangePercentage() {
+      const dailyChangeValue = parseFloat(this.dailyChange);
+      return dailyChangeValue !== 0 ? ((dailyChangeValue / this.totalValue) * 100).toFixed(2) : 0;
+    },
+    dailyChangeClass() {
+      return {
+      positive: this.dailyChange >= 0,
+      negative: this.dailyChange < 0
     }
+  }
   },
   mounted() {
     this.filteredItems = [...this.portfolioItems];
-    this.initCharts();
+    this.initAllocationChart();
+    this.fetchStockData();
+  },
+  beforeUnmount() {
+    this.destroyChart();
   },
   methods: {
     formatCurrency(value) {
@@ -228,20 +283,31 @@ export default {
         return;
       }
       const query = this.searchQuery.toLowerCase();
-      this.filteredItems = this.portfolioItems.filter(item => 
+      this.filteredItems = this.portfolioItems.filter(item =>
+          item.name.toLowerCase().includes(query) ||
+          item.symbol.toLowerCase().includes(query) ||
+          item.type.toLowerCase().includes(query)
+      );
+    },
+    addInvestment() {
+      // 在实际应用中，这里会有API调用
+      const newId = this.portfolioItems.length > 0
+          ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
+          : 1;
+
+
+      // 模拟计算当前价值和收益
+      this.filteredItems = this.portfolioItems.filter(item =>
         item.name.toLowerCase().includes(query) || 
         item.symbol.toLowerCase().includes(query) ||
         item.type.toLowerCase().includes(query)
       );
     },
     addInvestment() {
-      // 在实际应用中，这里会有API调用
       const newId = this.portfolioItems.length > 0 
         ? Math.max(...this.portfolioItems.map(item => item.id)) + 1 
         : 1;
       
-
-      // 模拟计算当前价值和收益
       const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
       const profit = currentValue - this.newInvestment.amount;
       const profitPercentage = (profit / this.newInvestment.amount) * 100;
@@ -259,8 +325,8 @@ export default {
       
       this.portfolioItems.push(newItem);
       this.filterPortfolio();
+      this.updateAllocationChart();
       
-      // 重置表单
       this.newInvestment = {
         type: 'stock',
         name: '',
@@ -268,8 +334,6 @@ export default {
         amount: 0,
         purchaseDate: new Date().toISOString().split('T')[0]
       };
-
-      this.updateCharts();
     },
     confirmDelete(item) {
       this.itemToDelete = item;
@@ -280,34 +344,144 @@ export default {
       this.filterPortfolio();
       this.showDeleteModal = false;
       this.itemToDelete = null;
-      this.updateCharts();
+      this.updateAllocationChart();
     },
-    initCharts() {
-      Chart.register(...registerables);
-
-      // 性能图表
-      const performanceCtx = this.$refs.performanceChart.getContext('2d');
-      this.performanceChart = new Chart(performanceCtx, {
-        type: 'line',
-        data: this.getPerformanceChartData(),
-        options: {
-          responsive: true,
-          plugins: {
-            title: {
-              display: true,
-              text: '投资组合价值变化'
-            }
-          }
+    
+    // 股票图表相关方法
+    processStockData(data) {
+      if (!data || data.length === 0) return [];
+      
+      const grouped = {};
+      
+      data.forEach(item => {
+        if (!grouped[item.date]) {
+          grouped[item.date] = {
+            prices: [],
+            date: item.date
+          };
         }
+        grouped[item.date].prices.push(item.price);
       });
 
-      // 资产分配图表
+      return Object.values(grouped).map(day => ({
+        date: day.date,
+        avgPrice: day.prices.reduce((sum, price) => sum + price, 0) / day.prices.length,
+        minPrice: Math.min(...day.prices),
+        maxPrice: Math.max(...day.prices)
+      }));
+    },
+    destroyChart() {
+      if (this.chartInstance) {
+        this.chartInstance.destroy();
+        this.chartInstance = null;
+      }
+    },
+    async fetchStockData() {
+      try {
+        this.chartLoading = true;
+        this.chartError = null;
+        
+        const response = await fetch(
+          `http://localhost:3000/api/stocks/000001/history?start=${this.chartStartDate}&end=${this.chartEndDate}`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`获取数据失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        this.destroyChart();
+        this.chartHistory = this.processStockData(data);
+        
+        if (!this.$refs.stockChartCanvas || this.chartHistory.length === 0) return;
+
+        const ctx = this.$refs.stockChartCanvas.getContext('2d');
+        if (!ctx) return;
+        
+        this.chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: this.chartHistory.map(item => item.date),
+            datasets: [
+              {
+                label: '平均价格',
+                data: this.chartHistory.map(item => item.avgPrice),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+              },
+              {
+                label: '最低价格',
+                data: this.chartHistory.map(item => item.minPrice),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderDash: [5, 5],
+                tension: 0.1
+              },
+              {
+                label: '最高价格',
+                data: this.chartHistory.map(item => item.maxPrice),
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderDash: [5, 5],
+                tension: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: '股票价格走势'
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: '价格 (元)'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: '日期'
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            }
+          }
+        });
+      } catch (err) {
+        this.chartError = '获取数据失败: ' + err.message;
+        console.error('获取数据时出错:', err);
+      } finally {
+        this.chartLoading = false;
+      }
+    },
+    
+    // 资产分配图表相关方法
+    initAllocationChart() {
       const allocationCtx = this.$refs.allocationChart.getContext('2d');
       this.allocationChart = new Chart(allocationCtx, {
         type: 'pie',
         data: this.getAllocationChartData(),
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             title: {
               display: true,
@@ -316,37 +490,16 @@ export default {
           }
         }
       });
-    },
+
+
+      },
     updateCharts() {
       this.performanceChart.data = this.getPerformanceChartData();
       this.performanceChart.update();
+    },
+    updateAllocationChart() {
       this.allocationChart.data = this.getAllocationChartData();
       this.allocationChart.update();
-    },
-    getPerformanceChartData() {
-      // 模拟历史数据 - 实际应用中应从API获取
-      const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-      const currentMonth = new Date().getMonth();
-      const labels = months.slice(0, currentMonth + 1);
-
-      // 模拟增长数据
-      const data = [];
-      let value = this.totalValue * 0.7; // 起始值为当前总价值的70%
-      for (let i = 0; i <= currentMonth; i++) {
-        data.push(value);
-        value *= (1 + (Math.random() * 0.1 - 0.02)); // 随机增长
-      }
-
-      return {
-        labels,
-        datasets: [{
-          label: '投资组合价值',
-          data,
-          borderColor: 'rgb(75, 192, 192)',
-          tension: 0.1,
-          fill: true
-        }]
-      };
     },
     getAllocationChartData() {
       const types = {};
@@ -383,7 +536,7 @@ export default {
 <style scoped>
 .portfolio-manager {
   font-family: 'Arial', sans-serif;
-  max-width: 1200px;
+  /*max-width: 1200px;*/
   margin: 0 auto;
   padding: 20px;
   color: #333;
@@ -441,18 +594,29 @@ export default {
 }
 
 .left-panel {
+  /*width: 500px;*/
+
   flex: 1;
 }
 
 .right-panel {
-  width: 400px;
+  width: 590px;
 }
 
-.portfolio-list, .add-investment, .performance-chart, .allocation-chart {
+.portfolio-list, .add-investment, .performance-chart {
   background: white;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.allocation-chart {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: 350px;
   margin-bottom: 20px;
 }
 
@@ -571,9 +735,81 @@ h2 {
   background: #27ae60;
 }
 
-.chart-container {
+/* 股票图表样式 */
+.chart-wrapper {
   position: relative;
   height: 300px;
+  margin: 20px 0;
+}
+
+/* 修复控制区域布局 */
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.refresh-btn {
+  padding: 10px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+  text-align: center;
+}
+
+.refresh-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.date-range-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.date-input-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.date-input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #555;
+}
+
+.date-input-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.error {
+  color: #ff0000;
+  background-color: #ffeeee;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+/* 资产分配图表样式 */
+.chart-container {
+  position: relative;
+  height: 270px;
   margin-top: 20px;
 }
 
@@ -640,6 +876,16 @@ h2 {
     flex-direction: column;
   }
   .right-panel {
+    width: 100%;
+  }
+  
+  /* 在小屏幕上优化日期范围布局 */
+  .date-range-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .date-input-group {
     width: 100%;
   }
 }

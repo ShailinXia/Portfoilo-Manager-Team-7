@@ -1,5 +1,7 @@
 const Database = require('better-sqlite3');
-const db = new Database('./db/dummy.db');
+const db = new Database('./db/dummy.db', {
+    timeout: 5000 // 5秒超时
+});
 
 // 简单的异步封装
 db.runAsync = (sql, params=[]) => Promise.resolve(db.prepare(sql).run(...params));
