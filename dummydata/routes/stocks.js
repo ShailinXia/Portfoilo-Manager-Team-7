@@ -4,45 +4,52 @@ const router = express.Router();
 
 // 获取所有股票列表，支持分页、按市值/涨跌幅排序
 router.get('/', (req, res) => {
-  const { page = 1, limit = 20, sort = 'market_cap', order = 'desc' } = req.query;
-  const offset = (page - 1) * limit;
 
-  // 只允许特定字段排序
-  const allowedSort = ['market_cap', 'change_percent'];
-  const sortField = allowedSort.includes(sort) ? sort : 'market_cap';
-  const sortOrder = order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  try{
+  // console.log('=== 收到 /api/stocks 请求 ===');
+    const { page = 1, limit = 20, sort = 'market_cap', order = 'desc' } = req.query;
+    const offset = (page - 1) * limit;
 
-  // 查询所有股票
-  const stocks = db.prepare('SELECT * FROM stocks LIMIT ? OFFSET ?').all(Number(limit), Number(offset));
+    // 只允许特定字段排序
+    const allowedSort = ['market_cap', 'change_percent'];
+    const sortField = allowedSort.includes(sort) ? sort : 'market_cap';
+    const sortOrder = order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-  // 动态计算涨跌幅
-  const stocksWithChange = stocks.map(stock => {
-    const prev = db.prepare(
-      'SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
-    ).get(stock.code);
-    let change_percent = null;
-    if (prev && prev.price) {
-      change_percent = Number(((stock.latest_price - prev.price) / prev.price * 100).toFixed(2));
-    }
-    return { ...stock, change_percent };
-  });
+    // 查询所有股票
+    const stocks = db.prepare('SELECT * FROM stocks LIMIT ? OFFSET ?').all(Number(limit), Number(offset));
 
-  // 排序
-  stocksWithChange.sort((a, b) => {
-    if (sortField === 'market_cap') {
-      // 市值排序（假设 market_cap 为数字，若为字符串需转换）
-      return sortOrder === 'ASC'
-        ? Number(a.market_cap) - Number(b.market_cap)
-        : Number(b.market_cap) - Number(a.market_cap);
-    } else {
-      // 涨跌幅排序
-      return sortOrder === 'ASC'
-        ? (a.change_percent ?? -Infinity) - (b.change_percent ?? -Infinity)
-        : (b.change_percent ?? -Infinity) - (a.change_percent ?? -Infinity);
-    }
-  });
+    // 动态计算涨跌幅
+    const stocksWithChange = stocks.map(stock => {
+      const prev = db.prepare(
+        'SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
+      ).get(stock.code);
+      let change_percent = null;
+      if (prev && prev.price) {
+        change_percent = Number(((stock.latest_price - prev.price) / prev.price * 100).toFixed(2));
+      }
+      return { ...stock, change_percent };
+    });
 
-  res.json(stocksWithChange);
+    // 排序
+    stocksWithChange.sort((a, b) => {
+      if (sortField === 'market_cap') {
+        // 市值排序（假设 market_cap 为数字，若为字符串需转换）
+        return sortOrder === 'ASC'
+          ? Number(a.market_cap) - Number(b.market_cap)
+          : Number(b.market_cap) - Number(a.market_cap);
+      } else {
+        // 涨跌幅排序
+        return sortOrder === 'ASC'
+          ? (a.change_percent ?? -Infinity) - (b.change_percent ?? -Infinity)
+          : (b.change_percent ?? -Infinity) - (a.change_percent ?? -Infinity);
+      }
+    });
+
+    res.json(stocksWithChange);
+  } catch (err){
+    console.error("查询错误", err);
+    res.status(500).json({error:"服务器内部错误"});
+  }
 });
 
 // 获取单只股票详情（动态计算涨跌幅）

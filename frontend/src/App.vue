@@ -80,6 +80,15 @@ const handleLogout = () => {
         </button>
       </nav>
     </div>
+<!--=======-->
+<!--import PortfolioManager from './components/PortfolioManager.vue';-->
+<!--</script>-->
+
+<!--<template>-->
+<!--  <PortfolioManager />-->
+<!--  <StockList />-->
+<!--   <StockHistory /> -->
+<!--&gt;>>>>>> 08b84a413d026acc790bdbce71b815a3c2d04b91-->
 
     <div class="main-content">
       <PortfolioManager v-if="activeTab === 'portfolio'" />
@@ -87,8 +96,23 @@ const handleLogout = () => {
     </div>
   </div>
 </template>
+<!--<<<<<<< HEAD-->
 
 
+<!--=======-->
+<!--<script>-->
+<!--import StockList from './components/StockList.vue';-->
+<!--// import StockHistory from './components/StockHistory.vue';-->
+<!---->
+<!--export default {-->
+<!--  name: 'App',-->
+<!--  components: {-->
+<!--    StockList,-->
+<!--    // StockHistory,-->
+<!--  }-->
+<!--};-->
+<!--</script>-->
+<!--&gt;>>>>>> 08b84a413d026acc790bdbce71b815a3c2d04b91-->
 <style>
 body {
   margin: 0;
