@@ -7,6 +7,7 @@
           <h3>总价值</h3>
           <p class="value">{{ formatCurrency(totalValue) }}</p>
         </div>
+
         <div class="summary-card">
           <h3>总收益</h3>
           <p class="value" :class="{ positive: totalProfit >= 0, negative: totalProfit < 0 }">
@@ -23,10 +24,10 @@
           <h2>我的投资组合</h2>
           <div class="search-bar">
             <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="搜索投资项目..."
-              @input="filterPortfolio"
+                type="text"
+                v-model="searchQuery"
+                placeholder="搜索投资项目..."
+                @input="filterPortfolio"
             />
           </div>
 
@@ -64,44 +65,44 @@
             <div class="form-group">
               <label for="investment-name">名称</label>
               <input
-                type="text"
-                id="investment-name"
-                v-model="newInvestment.name"
-                required
-                placeholder="例如: 苹果公司"
+                  type="text"
+                  id="investment-name"
+                  v-model="newInvestment.name"
+                  required
+                  placeholder="例如: 苹果公司"
               />
             </div>
 
             <div class="form-group">
               <label for="investment-symbol">代码/符号</label>
               <input
-                type="text"
-                id="investment-symbol"
-                v-model="newInvestment.symbol"
-                required
-                placeholder="例如: AAPL"
+                  type="text"
+                  id="investment-symbol"
+                  v-model="newInvestment.symbol"
+                  required
+                  placeholder="例如: AAPL"
               />
             </div>
 
             <div class="form-group">
               <label for="investment-amount">投资金额</label>
               <input
-                type="number"
-                id="investment-amount"
-                v-model="newInvestment.amount"
-                min="0"
-                step="0.01"
-                required
+                  type="number"
+                  id="investment-amount"
+                  v-model="newInvestment.amount"
+                  min="0"
+                  step="0.01"
+                  required
               />
             </div>
 
             <div class="form-group">
               <label for="investment-date">购买日期</label>
               <input
-                type="date"
-                id="investment-date"
-                v-model="newInvestment.purchaseDate"
-                required
+                  type="date"
+                  id="investment-date"
+                  v-model="newInvestment.purchaseDate"
+                  required
               />
             </div>
 
@@ -227,25 +228,24 @@ export default {
         this.filteredItems = [...this.portfolioItems];
         return;
       }
-
       const query = this.searchQuery.toLowerCase();
       this.filteredItems = this.portfolioItems.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        item.symbol.toLowerCase().includes(query) ||
-        item.type.toLowerCase().includes(query)
+          item.name.toLowerCase().includes(query) ||
+          item.symbol.toLowerCase().includes(query) ||
+          item.type.toLowerCase().includes(query)
       );
     },
     addInvestment() {
       // 在实际应用中，这里会有API调用
       const newId = this.portfolioItems.length > 0
-        ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-        : 1;
+          ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
+          : 1;
+
 
       // 模拟计算当前价值和收益
       const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
       const profit = currentValue - this.newInvestment.amount;
       const profitPercentage = (profit / this.newInvestment.amount) * 100;
-
       const newItem = {
         id: newId,
         name: this.newInvestment.name,
@@ -317,11 +317,12 @@ export default {
           }
         }
       });
-    },
+
+
+      },
     updateCharts() {
       this.performanceChart.data = this.getPerformanceChartData();
       this.performanceChart.update();
-
       this.allocationChart.data = this.getAllocationChartData();
       this.allocationChart.update();
     },
@@ -385,7 +386,7 @@ export default {
 <style scoped>
 .portfolio-manager {
   font-family: 'Arial', sans-serif;
-  max-width: 1200px;
+  /*max-width: 1200px;*/
   margin: 0 auto;
   padding: 20px;
   color: #333;
@@ -443,18 +444,29 @@ export default {
 }
 
 .left-panel {
+  /*width: 500px;*/
+
   flex: 1;
 }
 
 .right-panel {
-  width: 400px;
+  width: 590px;
 }
 
-.portfolio-list, .add-investment, .performance-chart, .allocation-chart {
+.portfolio-list, .add-investment, .performance-chart {
   background: white;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.allocation-chart {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: 510px;
   margin-bottom: 20px;
 }
 
@@ -575,7 +587,7 @@ h2 {
 
 .chart-container {
   position: relative;
-  height: 300px;
+  height: 270px;
   margin-top: 20px;
 }
 
@@ -641,7 +653,6 @@ h2 {
   .content {
     flex-direction: column;
   }
-
   .right-panel {
     width: 100%;
   }
