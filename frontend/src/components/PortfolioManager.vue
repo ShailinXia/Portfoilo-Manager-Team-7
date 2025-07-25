@@ -13,6 +13,14 @@
             {{ formatCurrency(totalProfit) }} ({{ profitPercentage }}%)
           </p>
         </div>
+        <div class="summary-card">
+          <h3>持仓数量</h3>
+          <p class="value">{{ portfolioItems.length }}</p>
+        </div>
+        <div class="summary-card">
+          <h3>今日涨跌</h3>
+          <p class="value"> {{ formatCurrency(dailyChange) }} ({{ dailyChangePercentage }}%)</p>
+        </div>
       </div>
     </div>
 
@@ -209,7 +217,21 @@ export default {
     profitPercentage() {
       const totalInvested = this.portfolioItems.reduce((sum, item) => sum + item.amount, 0);
       return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
+    },
+    dailyChange() {
+      // 模拟每日涨跌 - 实际应用中应从API获取
+      return (Math.random() * 200 - 100).toFixed(2);
+    },
+    dailyChangePercentage() {
+      const dailyChangeValue = parseFloat(this.dailyChange);
+      return dailyChangeValue !== 0 ? ((dailyChangeValue / this.totalValue) * 100).toFixed(2) : 0;
+    },
+    dailyChangeClass() {
+      return {
+      positive: this.dailyChange >= 0,
+      negative: this.dailyChange < 0
     }
+  }
   },
   mounted() {
     this.filteredItems = [...this.portfolioItems];
