@@ -1,36 +1,9 @@
-<!--<script setup>-->
-<!--import PortfolioManager from './components/PortfolioManager.vue';-->
-<!--</script>-->
-
-<!--<template>-->
-<!--  <PortfolioManager />-->
-<!--  <StockList />-->
-
-<!--</template>-->
-<!--<script>-->
-<!--import StockList from './components/StockList.vue';-->
-
-<!--export default {-->
-<!--  name: 'App',-->
-<!--  components: {-->
-<!--    StockList-->
-<!--  }-->
-<!--};-->
-<!--</script>-->
-<!--<style>-->
-<!--body {-->
-<!--  margin: 0;-->
-<!--  padding: 20px;-->
-<!--  background-color: #f5f7fa;-->
-<!--}-->
-<!--</style>-->
-
 <script setup>
 
-import { ref, onMounted } from 'vue';
-import LoginView from './views/LoginView.vue';
+import { onMounted, ref } from 'vue';
 import PortfolioManager from './components/PortfolioManager.vue';
 import StockList from './components/StockList.vue';
+import LoginView from './views/LoginView.vue';
 
 const isAuthenticated = ref(false);
 const activeTab = ref('portfolio');
@@ -50,9 +23,7 @@ const handleLogout = () => {
   isAuthenticated.value = false;
   activeTab.value = 'portfolio'; // 重置选项卡
 };
-// =======
-// import PortfolioManager from 'C:/Users/Administrator/Portfoilo-Manager-Team-7/frontend/src/components/PortfolioManager.vue'; // Adjust the path as necessary
-// >>>>>>> c6db412e21cdf5caa45eb22927780f95a6a24f93
+
 </script>
 
 <template>

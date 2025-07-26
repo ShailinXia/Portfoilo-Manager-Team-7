@@ -59,19 +59,22 @@ export default {
       filteredStocks: [],
       searchQuery: '',
       loading: false,
-      error: null
+      error: null,
+      currentPage: 1,
+      limit: 20,
+      hasNextPage: true // 控制“下一页”按钮
     };
   },
   async created() {
     await this.fetchStocks();
   },
   methods: {
-    async fetchStocks() {
+    async fetchStocks(page = 1) {
       this.loading = true;
       this.error = null;
       try {
         //TODO: Adjust the URL to match your backend API endpoint
-        const response = await axios.get('http://localhost:8080/api/stocks');
+        const response = await axios.get(`http://localhost:3000/api/stocks?page=100&limit=10`);
         this.stocks = response.data;
         this.filteredStocks = [...this.stocks];
       } catch (err) {

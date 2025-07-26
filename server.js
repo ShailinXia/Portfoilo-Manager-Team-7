@@ -48,7 +48,7 @@ function fetchStockNamesPage(page = 1, pageSize = 10) {
     .get(`http://localhost:3000/api/stocks/names?page=${page}&pageSize=${pageSize}`)
     .then((response) => {
       stockNames =  response.data; // 返回 JSON 格式数据
-      console.log("分页股票名称数据:", stockNames);
+      console.log(`第${page}股票名称数据:`, stockNames);
       return stockNames; // 返回 JSON 格式数据
     })
     .catch((error) => {
@@ -57,7 +57,7 @@ function fetchStockNamesPage(page = 1, pageSize = 10) {
     });
 }
 
-stockNames = fetchStockNamesPage(page=1, pageSize=20);
+stockNames = fetchStockNamesPage(page=1, pageSize=10);
 
 //NOTE:需配置异步加载 async及await
 app.get("/api/stocks/names", async (req, res) => {

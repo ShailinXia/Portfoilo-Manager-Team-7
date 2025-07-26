@@ -40,7 +40,14 @@ const SCHEMAS = [
     net_value REAL,
     change_percent REAL,
     FOREIGN KEY(fund_code) REFERENCES funds(fund_code)
-  )`
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS userInfo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    investment_type TEXT,
+    investment_amount REAL
+    )`
 ];
 
 // 字段映射 (适配您的Excel)
@@ -76,7 +83,7 @@ async function initialize() {
     await importXLSX('./data/stock.xlsx', 'stocks', FIELD_MAPS.stocks);
     await importXLSX('./data/fund.xlsx', 'funds', FIELD_MAPS.funds);
 
-    console.log('✅ 数据库初始化完成 (4个表已创建)');
+    console.log('✅ 数据库初始化完成 (5个表已创建)');
   } catch (err) {
     try { await db.runAsync('ROLLBACK'); } catch (e) {}
     console.error('❌ 初始化失败:', err);

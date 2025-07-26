@@ -26,11 +26,11 @@ echo "Starting data.js..."
 # 延时函数
 sleep 25 # 等待 25 秒以确保 data 服务启动完成
 
-# 启动后端服务
-echo "Starting server.js..."
-(
-  node server.js > "./$LOG_DIR/server.log" 2>&1 & # 启动 server.js 并将输出重定向到 server.log
-)
+# # 启动后端服务
+# echo "Starting server.js..."
+# (
+#   node server.js > "./$LOG_DIR/server.log" 2>&1 & # 启动 server.js 并将输出重定向到 server.log
+# )
 
 # 启动前端 Vue 服务
 echo "Starting Vue.js..."

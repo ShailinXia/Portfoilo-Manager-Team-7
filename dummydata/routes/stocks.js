@@ -1,13 +1,12 @@
 const express = require("express");
 const db = require("../config/db");
-// const { getDistinctStockCodes } = require('../utils/filterField');
 const router = express.Router();
 
 // 获取所有股票列表，支持分页、按市值/涨跌幅排序
 router.get("/", (req, res) => {
   const {
     page = 1,
-    limit = 20,
+    limit = 10,
     sort = "market_cap",
     order = "desc",
   } = req.query;
