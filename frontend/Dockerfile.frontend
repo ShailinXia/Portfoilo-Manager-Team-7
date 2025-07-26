@@ -1,0 +1,15 @@
+# 阶段1：使用 Node 构建前端
+FROM node:20 AS builder
+
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend ./
+#BUG:不要在Dockerfile的RUN阶段执行npm run dev，因为这会阻塞构建过程 
+# 编译静态文件
+RUN npm run build
+
+# 阶段2：用 nginx 托管
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80

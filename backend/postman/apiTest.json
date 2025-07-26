@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "DummyData API 测试",
-    "_postman_id": "dummydata-api-test",
+    "name": "backend API 测试",
+    "_postman_id": "backend-api-test",
     "description": "测试所有股票和基金相关接口",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

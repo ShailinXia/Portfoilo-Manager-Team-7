@@ -76,6 +76,7 @@ router.get("/names", (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: "未找到股票名称" });
     } else {
+      console.log("查询到的股票名称:", rows);
       res.json(rows);
     }
   } catch (err) {
@@ -94,14 +95,14 @@ router.get("/codes", (req, res) => {
   try {
     // 查询总数
     const total = db
-      .prepare("SELECT COUNT(DISTINCT stock_code) AS count FROM stock_history")
+      .prepare("SELECT COUNT(stock_code) AS count FROM stock_history")
       .get().count;
 
     // 查询分页数据，以名称展示
     const rows = db
       .prepare(
         `
-      SELECT DISTINCT stocks.name 
+      SELECT stocks.code
       FROM stocks 
       join stock_history 
       on stocks.code=stock_history.stock_code
@@ -118,6 +119,7 @@ router.get("/codes", (req, res) => {
     // `).all(pageSize, offset);
 
     // 返回分页数据和元信息
+    console.log(`第 ${page} 页的股票代码:`, rows);
     res.json({
       page,
       pageSize,

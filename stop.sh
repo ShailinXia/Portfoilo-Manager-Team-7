@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 删除数据库文件，保留用户信息表
-DB_FILE="./dummydata/db/dummy.db"
+DB_FILE="./backend/db/dummy.db"
 
 echo "Stopping data.js..."
 pkill -f "npm start"

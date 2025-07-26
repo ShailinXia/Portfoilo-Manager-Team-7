@@ -4,12 +4,12 @@
 LOG_DIR="log"
 
 # 创建 log 文件夹（如果不存在）
-mkdir -p "$LOG_DIR" "dummydata/db"
+mkdir -p "$LOG_DIR" "backend/db"
 
 # 初始化数据库
 echo "Initializing database..."
 (
-  cd ./dummydata || exit
+  cd ./backend || exit
   node scripts/initdb.js
 )
 
@@ -19,7 +19,7 @@ touch "./$LOG_DIR/data.log" "./$LOG_DIR/server.log" "./$LOG_DIR/vue.log"
 # 启动 data 服务
 echo "Starting data.js..."
 (
-  cd ./dummydata || exit
+  cd ./backend || exit
   node app.js > "../$LOG_DIR/data.log" 2>&1 & # 启动 data.js 并将输出重定向到 data.log
 )
 

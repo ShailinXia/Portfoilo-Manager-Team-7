@@ -30,11 +30,12 @@ npm install
 
 npm install axios 
 
-# 3. Finally, `cd ../dummydata`
+# 3. Finally, `cd ../backend`
 
 npm install express better-sqlite3 xlsx
 
 ```
+
 > If your environment version is not the same as the reference version, maybe you need to rebuild the `better-sqlite3` package
 
 ## 🚀Usage
