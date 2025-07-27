@@ -4,4 +4,3 @@ package*.json
 server.js
 server.log
 structure.txt
-**/db/
