@@ -8,7 +8,7 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./log:/app/log
-      - ./db:/app/db
+      # - ./db:/app/db
     restart: unless-stopped
 
   frontend:

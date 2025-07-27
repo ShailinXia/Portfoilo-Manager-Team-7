@@ -15,6 +15,6 @@ app.use('/api/stocks', stocksRouter);
 app.use('/api/funds', fundsRouter); // 注册基金路由
 app.use('/api/userInfo', userInfoRouter); // 注册用户信息路由
 
-app.listen(3000, () => {
+app.listen(3000, '0.0.0.0', () => {
   console.log('API 服务已启动: http://localhost:3000');
 });

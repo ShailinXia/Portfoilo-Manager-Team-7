@@ -1,4 +1,4 @@
-# backend Project Description
+# Backend Data Generation Service
 
 ## How to run this project?
 

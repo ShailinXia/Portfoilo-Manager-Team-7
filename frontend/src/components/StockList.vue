@@ -60,9 +60,6 @@ export default {
       searchQuery: '',
       loading: false,
       error: null,
-      currentPage: 1,
-      limit: 20,
-      hasNextPage: true // 控制“下一页”按钮
     };
   },
   async created() {

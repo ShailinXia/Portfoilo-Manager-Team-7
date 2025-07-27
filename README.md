@@ -63,3 +63,33 @@ chmod +x stop.sh
 # Stop the whole server
 ./stop.sh
 ```
+
+## :whale: Docker 
+
+### Install Docker in Mac
+
+```bash
+brew install --cask docker
+
+brew install docker-compose
+```
+
+> Start Docker Desktop and wait for it to initialize.
+> And then conduct the following commands in the terminal.
+
+```bash
+docker-compose build
+
+docker-compose up
+```
+> The run status will be shown in the terminal.
+> ![Run successfully](./images/docker_run.png)
+> ![Run successfully](./images/docker_log.png)
+
+> Docker pages will be created in the `frontend` and `backend` directories.
+> ![Docker pages](./images/docker.png)
+
+> If you build the docker image successfully, you can access the frontend application at `http://localhost:5173` and the backend API at `http://localhost:3000/`.
+
+> ![Frontend Application](./images/frontend_1.png)
+> ![Frontend Application](./images/frontend_2.png)
