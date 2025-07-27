@@ -10,6 +10,79 @@
 - 😎`Member 4`: `Tom He`
 - 🙃`Member 5`: `Alfred Lu`
 
+## 🎬Project Structure
+
+```text
+.
+├── backend
+│   ├── app.js
+│   ├── config
+│   │   └── db.js
+│   ├── data
+│   │   ├── fund.xlsx
+│   │   └── stock.xlsx
+│   ├── db
+│   │   └── dummy.db
+│   ├── Dockerfile.backend
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postman
+│   │   ├── apiTest.json
+│   │   └── postman_collection.json
+│   ├── README.md
+│   ├── routes
+│   │   ├── funds.js
+│   │   ├── stocks.js
+│   │   └── userInfo.js
+│   ├── scripts
+│   │   └── initDB.js
+│   ├── start.sh
+│   └── utils
+│       ├── fundSimulator.js
+│       ├── importXlsx.js
+│       └── priceSimulator.js
+├── docker-compose.yml
+├── frontend
+│   ├── Dockerfile.frontend
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── favicon.ico
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App.vue
+│   │   ├── assets
+│   │   │   ├── base.css
+│   │   │   ├── extensions.json
+│   │   │   ├── logo.svg
+│   │   │   ├── main.css
+│   │   │   └── vue.svg
+│   │   ├── components
+│   │   │   ├── HelloWorld.vue
+│   │   │   ├── PortfolioManager.vue
+│   │   │   └── StockList.vue
+│   │   ├── main.js
+│   │   ├── router
+│   │   │   └── index.js
+│   │   └── views
+│   │       └── LoginView.vue
+│   └── vite.config.js
+├── log
+│   ├── data.log
+│   ├── server.log
+│   └── vue.log
+├── package-lock.json
+├── package.json
+├── README.md
+├── start.sh
+├── stop.sh
+└── structure.txt
+
+17 directories, 49 files
+```
+
 ## 🤪Prerequisites
 
 > - Node.js Reference version: `v20.19.4`
@@ -93,3 +166,5 @@ docker-compose up
 
 > ![Frontend Application](./images/frontend_1.png)
 > ![Frontend Application](./images/frontend_2.png)
+
+## 🤜Acknowledgements🤛
