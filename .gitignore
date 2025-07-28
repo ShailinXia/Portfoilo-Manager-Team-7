@@ -6,3 +6,5 @@ log/
 server.js
 **/.vscode/
 structure.txt
+backend/
+dummydata/

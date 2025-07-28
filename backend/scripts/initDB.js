@@ -2,7 +2,7 @@ const db = require('../config/db');
 const { importXLSX } = require('../utils/importXlsx');
 
 const SCHEMAS = [
-  `DROP TABLE IF EXISTS userInfo`,
+  // `DROP TABLE IF EXISTS userInfo`,
   `CREATE TABLE IF NOT EXISTS stocks (
     code TEXT PRIMARY KEY,
     name TEXT,
