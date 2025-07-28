@@ -31,8 +31,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import {ref} from 'vue';
+import {useRouter} from 'vue-router';
+
+const emit = defineEmits(['login-success']); // 新增
 
 const username = ref('');
 const password = ref('');
@@ -40,34 +42,47 @@ const error = ref('');
 const router = useRouter();
 
 const handleLogin = () => {
-  // 简单验证 - 实际应用中应该调用API
   if (username.value === 'admin' && password.value === '123456') {
     localStorage.setItem('isAuthenticated', 'true');
-    router.push('/portfolio');
+    emit('login-success'); // 通知父组件
   } else {
     error.value = '用户名或密码错误';
   }
 };
+
 </script>
 
 <style scoped>
 .login-container {
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  background-size: cover;
+  backdrop-filter: blur(8px);
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #3498db, #2c3e50);
-  padding: 20px;
 }
 
 .login-box {
-  background: white;
+  animation: fadeInUp 0.6s ease;
+  background: rgba(255, 255, 255, 0.95);
   padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
   text-align: center;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-box h2 {
@@ -88,7 +103,7 @@ const handleLogin = () => {
 }
 
 .form-group input {
-  width: 100%;
+  width: 95%;
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -104,19 +119,21 @@ const handleLogin = () => {
 .login-btn {
   width: 100%;
   padding: 12px;
-  background-color: #3498db;
-  color: white;
+  background-image: linear-gradient(to right, #3498db, #2980b9);
   border: none;
-  border-radius: 5px;
+  border-radius: 25px;
+  color: white;
   font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
 .login-btn:hover {
-  background-color: #2980b9;
+  background-image: linear-gradient(to right, #2980b9, #1c5980);
+  transform: translateY(-2px);
 }
+
 
 .error-message {
   color: #e74c3c;

@@ -1,33 +1,6 @@
-<!--<script setup>-->
-<!--import PortfolioManager from './components/PortfolioManager.vue';-->
-<!--</script>-->
-
-<!--<template>-->
-<!--  <PortfolioManager />-->
-<!--  <StockList />-->
-
-<!--</template>-->
-<!--<script>-->
-<!--import StockList from './components/StockList.vue';-->
-
-<!--export default {-->
-<!--  name: 'App',-->
-<!--  components: {-->
-<!--    StockList-->
-<!--  }-->
-<!--};-->
-<!--</script>-->
-<!--<style>-->
-<!--body {-->
-<!--  margin: 0;-->
-<!--  padding: 20px;-->
-<!--  background-color: #f5f7fa;-->
-<!--}-->
-<!--</style>-->
-
 <script setup>
 
-import { ref, onMounted } from 'vue';
+import {ref, onMounted} from 'vue';
 import LoginView from './views/LoginView.vue';
 import PortfolioManager from './components/PortfolioManager.vue';
 import StockList from './components/StockList.vue';
@@ -44,20 +17,19 @@ const checkAuthStatus = () => {
   isAuthenticated.value = localStorage.getItem('isAuthenticated') === 'true';
 };
 
+
 // 处理退出登录
 const handleLogout = () => {
   localStorage.removeItem('isAuthenticated');
   isAuthenticated.value = false;
   activeTab.value = 'portfolio'; // 重置选项卡
 };
-// =======
-// import PortfolioManager from 'C:/Users/Administrator/Portfoilo-Manager-Team-7/frontend/src/components/PortfolioManager.vue'; // Adjust the path as necessary
-// >>>>>>> c6db412e21cdf5caa45eb22927780f95a6a24f93
+
 </script>
 
 <template>
   <div v-if="!isAuthenticated">
-    <LoginView @login-success="isAuthenticated = true" />
+    <LoginView @login-success="isAuthenticated = true"/>
   </div>
   <div v-else class="app-container">
     <div class="sidebar">
@@ -80,39 +52,15 @@ const handleLogout = () => {
         </button>
       </nav>
     </div>
-<!--=======-->
-<!--import PortfolioManager from './components/PortfolioManager.vue';-->
-<!--</script>-->
-
-<!--<template>-->
-<!--  <PortfolioManager />-->
-<!--  <StockList />-->
-<!--   <StockHistory /> -->
-<!--&gt;>>>>>> 08b84a413d026acc790bdbce71b815a3c2d04b91-->
 
     <div class="main-content">
-      <PortfolioManager v-if="activeTab === 'portfolio'" />
-      <StockList v-if="activeTab === 'stocks'" />
+      <PortfolioManager v-if="activeTab === 'portfolio'"/>
+      <StockList v-if="activeTab === 'stocks'"/>
     </div>
   </div>
 </template>
-<!--<<<<<<< HEAD-->
 
 
-<!--=======-->
-<!--<script>-->
-<!--import StockList from './components/StockList.vue';-->
-<!--// import StockHistory from './components/StockHistory.vue';-->
-<!---->
-<!--export default {-->
-<!--  name: 'App',-->
-<!--  components: {-->
-<!--    StockList,-->
-<!--    // StockHistory,-->
-<!--  }-->
-<!--};-->
-<!--</script>-->
-<!--&gt;>>>>>> 08b84a413d026acc790bdbce71b815a3c2d04b91-->
 <style>
 body {
   margin: 0;
@@ -129,7 +77,12 @@ body {
   background-color: #2c3e50;
   color: white;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 20; /* 保证在内容上层 */
 }
 
 .sidebar h2 {
@@ -178,6 +131,7 @@ body {
   flex: 1;
   padding: 20px;
   background-color: #f5f7fa;
+  margin-left: 220px; /* 新增：给主内容加左侧外边距，避免被sidebar覆盖 */
 }
 
 /* 响应式设计 */
@@ -185,9 +139,14 @@ body {
   .app-container {
     flex-direction: column;
   }
-
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0px;
+  }
   .sidebar {
+    position: static !important;
     width: 100%;
+    height: auto;
     padding: 10px;
   }
 

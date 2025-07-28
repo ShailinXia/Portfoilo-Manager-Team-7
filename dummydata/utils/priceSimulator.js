@@ -28,6 +28,6 @@ function simulatePrices() {
 }
 
 // 每分钟模拟一次
-setInterval(simulatePrices, 10 * 1000); // 10秒一次
+setInterval(simulatePrices, 600 * 1000); // 10秒一次
 
 module.exports = { simulatePrices };
