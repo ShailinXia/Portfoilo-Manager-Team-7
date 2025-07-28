@@ -60,7 +60,8 @@
             <div class="form-group">
               <label for="investment-type">投资类型</label>
               <select id="investment-type" v-model="newInvestment.type" required>
-                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>
+<!--                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>-->
+                <option v-for="t in investmentTypes" :value="t.value" :key="t.value">{{ t.label }}</option>
               </select>
             </div>
             <div class="form-group" style="position:relative">
@@ -263,8 +264,8 @@ export default {
       // 股票图表相关数据
       chartInstance: null,
       chartHistory: [],
-      chartStartDate: '2025-01-01',
-      chartEndDate: '2025-01-11',
+      chartStartDate: '',
+      chartEndDate: '',
       chartLoading: false,
       chartError: null,
 
@@ -393,72 +394,93 @@ export default {
     async addInvestment() {
       // 这里建议参数补全校验
       const postBody = {
-        name: this.newInvestment.name,
-        code: this.newInvestment.symbol,
-        type: this.newInvestment.type,
-        amount: this.newInvestment.amount,
-        purchaseDate: this.newInvestment.purchaseDate
+        // name: this.newInvestment.name,
+        // code: this.newInvestment.symbol,
+        // type: this.newInvestment.type,
+        // amount: this.newInvestment.amount,
+        // purchaseDate: this.newInvestment.purchaseDate
+        username: "Allen",                                 // 新增，数据库要求
+        investmentType: this.newInvestment.type,
+        investmentName: this.newInvestment.name,
+        investmentCode: this.newInvestment.symbol,
+        investmentAmount: Number(this.newInvestment.amount),
+        investmentDate: this.newInvestment.purchaseDate
       };
-      // 假设你的后端api/userinfo为POST方式插入
-      const resp = await fetch('http://localhost:8080/api/userinfo', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(postBody)
-      });
-      const result = await resp.json();
-      if (result.success) {
-        // 本地也添加/刷新数据
-        this.portfolioItems.push(postBody);
-        // 还可以清空表单、弹窗提醒
-        this.$message && this.$message.success && this.$message.success("添加成功！");
+      try {
+        const resp = await fetch('http://localhost:3000/api/userInfo/', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(postBody)
+        });
+        // 这里根据后端实际返回格式调整，通常是 {success: true/false, ...}
+        const result = await resp.json();
+        if (result.success) {
+          alert("添加投资项目成功！");
+          // 清空表单（如有需要）
+          this.newInvestment = {
+            type: 'stock',
+            name: '',
+            symbol: '',
+            amount: '',
+            purchaseDate: new Date().toISOString().split('T')[0]
+          };
+          // 可以刷新投资组合列表
+          this.filterPortfolio && this.filterPortfolio();
+        } else {
+          alert("添加有误：" + (result.message || "请检查数据"));
+        }
+      } catch (err) {
+        alert("添加有误：" + err.message);
       }
     },
 
-    addInvestment() {
-      // 在实际应用中，这里会有API调用
-      const newId = this.portfolioItems.length > 0
-          ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-          : 1;
+    // addInvestment() {
+    //   // 在实际应用中，这里会有API调用
+    //   const newId = this.portfolioItems.length > 0
+    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
+    //       : 1;
+    //
+    //   // 模拟计算当前价值和收益
+    //   this.filteredItems = this.portfolioItems.filter(item =>
+    //       item.name.toLowerCase().includes(query) ||
+    //       item.symbol.toLowerCase().includes(query) ||
+    //       item.type.toLowerCase().includes(query)
+    //   );
+    // },
+    //
+    // addInvestment() {
+    //   const newId = this.portfolioItems.length > 0
+    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
+    //       : 1;
+    //
+    //   const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
+    //   const profit = currentValue - this.newInvestment.amount;
+    //   const profitPercentage = (profit / this.newInvestment.amount) * 100;
+    //   const newItem = {
+    //     id: newId,
+    //     name: this.newInvestment.name,
+    //     symbol: this.newInvestment.symbol.toUpperCase(),
+    //     type: this.newInvestment.type,
+    //     amount: parseFloat(this.newInvestment.amount),
+    //     purchaseDate: this.newInvestment.purchaseDate,
+    //     currentValue: parseFloat(currentValue.toFixed(2)),
+    //     profit: parseFloat(profit.toFixed(2)),
+    //     profitPercentage: parseFloat(profitPercentage.toFixed(2))
+    //   };
+    //
+    //   this.portfolioItems.push(newItem);
+    //   this.filterPortfolio();
+    //   this.updateAllocationChart();
+    //
+    //   this.newInvestment = {
+    //     type: 'stock',
+    //     name: '',
+    //     symbol: '',
+    //     amount: 0,
+    //     purchaseDate: new Date().toISOString().split('T')[0]
+    //   };
+    // },
 
-      // 模拟计算当前价值和收益
-      this.filteredItems = this.portfolioItems.filter(item =>
-          item.name.toLowerCase().includes(query) ||
-          item.symbol.toLowerCase().includes(query) ||
-          item.type.toLowerCase().includes(query)
-      );
-    },
-    addInvestment() {
-      const newId = this.portfolioItems.length > 0
-          ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-          : 1;
-
-      const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
-      const profit = currentValue - this.newInvestment.amount;
-      const profitPercentage = (profit / this.newInvestment.amount) * 100;
-      const newItem = {
-        id: newId,
-        name: this.newInvestment.name,
-        symbol: this.newInvestment.symbol.toUpperCase(),
-        type: this.newInvestment.type,
-        amount: parseFloat(this.newInvestment.amount),
-        purchaseDate: this.newInvestment.purchaseDate,
-        currentValue: parseFloat(currentValue.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-        profitPercentage: parseFloat(profitPercentage.toFixed(2))
-      };
-
-      this.portfolioItems.push(newItem);
-      this.filterPortfolio();
-      this.updateAllocationChart();
-
-      this.newInvestment = {
-        type: 'stock',
-        name: '',
-        symbol: '',
-        amount: 0,
-        purchaseDate: new Date().toISOString().split('T')[0]
-      };
-    },
     confirmDelete(item) {
       this.itemToDelete = item;
       this.showDeleteModal = true;
@@ -638,13 +660,14 @@ export default {
       const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
       console.log(stock)
       this.selectedStockName = stock ? stock.name : '';
+
     },
-    onSelectStock(code) {
-      this.selectedStockCode = code;
-      this.updateSelectedStockName();
-      // ...拉历史数据
-      this.fetchStockData();
-    },
+    // onSelectStock(code) {
+    //   this.selectedStockCode = code;
+    //   this.updateSelectedStockName();
+    //   // ...拉历史数据
+    //   this.fetchStockData();
+    // },
     // 实时匹配输入的代码
     onStockSearchInput() {
       const keyword = this.stockSearchInput.trim();
