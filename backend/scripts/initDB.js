@@ -2,6 +2,7 @@ const db = require('../config/db');
 const { importXLSX } = require('../utils/importXlsx');
 
 const SCHEMAS = [
+  `DROP TABLE IF EXISTS userInfo`,
   `CREATE TABLE IF NOT EXISTS stocks (
     code TEXT PRIMARY KEY,
     name TEXT,
@@ -44,9 +45,12 @@ const SCHEMAS = [
 
   `CREATE TABLE IF NOT EXISTS userInfo (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    investment_type TEXT,
-    investment_amount REAL
+    username TEXT,
+    investmentType TEXT,
+    investmentName TEXT,
+    investmentCode TEXT,
+    investmentDate DATE,
+    investmentAmount REAL
     )`
 ];
 

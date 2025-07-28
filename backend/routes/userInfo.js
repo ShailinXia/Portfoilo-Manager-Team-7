@@ -38,23 +38,23 @@ router.post("/", (req, res) => {
 
   // 验证每个对象的字段
   for (const item of dataArray) {
-    const { username, investmentType, investmentAmount } = item;
-    if (!username || !investmentType || !investmentAmount) {
+    const { username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount } = item;
+    if (!username || !investmentType || !investmentName || !investmentCode || !investmentDate || !investmentAmount) {
       return res.status(400).json({
         message:
-          "每个对象必须包含 username, investmentType 和 investmentAmount",
+          "每个对象必须包含 username, investmentType, investmentName, investmentCode, investmentDate 和 investmentAmount",
       });
     }
   }
 
   // 批量插入用户信息
   const insertUser = db.prepare(
-    "INSERT INTO userInfo (username, investment_type, investment_amount) VALUES (?, ?, ?)"
+    "INSERT INTO userInfo (username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount) VALUES (?, ?, ?, ?, ?, ?)"
   );
   // 使用事务批量插入
   const insertMany = db.transaction((users) => {
     for (const user of users) {
-      insertUser.run(user.username, user.investmentType, user.investmentAmount);
+      insertUser.run(user.username, user.investmentType, user.investmentName, user.investmentCode, user.investmentDate, user.investmentAmount);
     }
   });
 
@@ -98,6 +98,27 @@ router.delete("/", (req, res) => {
     res.json({ message: `${username}信息删除成功`});
   } else {
     res.status(404).json({ message: "用户信息未找到" });
+  }
+});
+
+// 查询该用户的投资组合
+router.get("/portfolio", (req, res) => {
+  const { username } = req.query;
+  if (!username) {
+    return res.status(400).json({ message: "用户名不能为空" });
+  }
+
+  const portfolio = db
+    .prepare(
+      `SELECT investmentType, investmentName, investmentCode, investmentDate, investmentAmount 
+       FROM userInfo WHERE username = ?`
+    )
+    .all(username);
+
+  if (portfolio.length > 0) {
+    res.json(portfolio);
+  } else {
+    res.status(404).json({ message: "用户投资组合未找到" });
   }
 });
 

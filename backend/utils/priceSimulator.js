@@ -12,6 +12,7 @@ function simulatePrices() {
     // 随机波动 ±2%
     const changePercent = (Math.random() * 4 - 2).toFixed(2); // -2% ~ +2%
     const newPrice = +(stock.latest_price * (1 + changePercent / 100)).toFixed(2);
+    // TODO: maxPrice & minPrice Function
 
     // 只更新最新价
     db.prepare('UPDATE stocks SET latest_price = ? WHERE code = ?')
