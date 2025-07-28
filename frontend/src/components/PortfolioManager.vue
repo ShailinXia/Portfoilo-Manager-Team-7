@@ -194,9 +194,9 @@
 </template>
 
 <script>
-import {Chart, registerables} from 'chart.js';
-import * as echarts from 'echarts';  // 新增
-import axios from 'axios';            // 新增
+import axios from 'axios'; // 新增
+import { Chart, registerables } from 'chart.js';
+import * as echarts from 'echarts'; // 新增
 
 Chart.register(...registerables);
 
@@ -364,11 +364,11 @@ export default {
       );
     },
     async fetchStocks() {
-      const res = await fetch('http://localhost:8080/api/stocks');
+      const res = await fetch('http://localhost:3000/api/stocks');
       this.allStocks = await res.json();
     },
     async fetchFunds() {
-      const res = await fetch('http://localhost:8080/api/funds');
+      const res = await fetch('http://localhost:3000/api/funds');
       this.allFunds = await res.json();
     },
     onNameInput(e) {
@@ -626,7 +626,7 @@ export default {
     },
     async fetchStockList() {
       try {
-        const res = await axios.get('http://localhost:8080/api/stocks');
+        const res = await axios.get('http://localhost:3000/api/stocks');
         this.stocksList = res.data;
       } catch (err) {
         this.stocksList = [];
@@ -677,7 +677,7 @@ export default {
 
       try {
         // 日期参数可选
-        let url = `http://localhost:8080/api/stocks/${this.selectedStockCode}/history`;
+        let url = `http://localhost:3000/api/stocks/${this.selectedStockCode}/history`;
         // let url = `http://localhost:8080/api/stocks/000001/history`;
         const params = {};
         if (this.chartStartDate) params.start = this.chartStartDate;
