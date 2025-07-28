@@ -35,17 +35,37 @@
             <button @click="onSearch">搜索</button>
           </div>
           <ul class="investment-items">
-            <li v-for="item in filteredItems" :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType">
+            <li
+                v-for="item in filteredItems"
+                :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType"
+                class="investment-row"
+            >
+              <!-- 左侧：项目名称/代码/类型 -->
               <div class="item-info">
-                <h3>{{ item.investmentName }}</h3>
-                <p>{{ item.investmentCode }} · {{ item.investmentType }}</p>
+                <div class="item-title">{{ item.investmentName }}</div>
+                <div class="item-sub">
+                  {{ item.investmentCode }} ·
+                  <span :class="['type-label', item.investmentType]">
+        {{ item.investmentType === 'stock' ? '股票' : '基金' }}
+      </span>
+                </div>
               </div>
-              <div class="item-value">
-                <p>{{ formatCurrency(item.investmentAmount) }}</p>
+
+              <!-- 中间：金额 -->
+              <div class="item-amount">
+                {{ formatCurrency(item.investmentAmount) }}
               </div>
-              <button class="delete-btn" @click="confirmDelete(item)">×</button>
+
+              <!-- 右侧：删除按钮 -->
+              <button class="delete-btn modern-delete" @click="confirmDelete(item)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <circle cx="9" cy="9" r="9" fill="#F44336"/>
+                  <path d="M6 6L12 12M12 6L6 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
             </li>
           </ul>
+
         </div>
         <div class="card add-investment">
           <h2>添加投资项目</h2>
@@ -53,7 +73,7 @@
             <div class="form-group">
               <label for="investment-type">投资类型</label>
               <select id="investment-type" v-model="newInvestment.type" required>
-<!--                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>-->
+                <!--                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>-->
                 <option v-for="t in investmentTypes" :value="t.value" :key="t.value">{{ t.label }}</option>
               </select>
             </div>
@@ -69,20 +89,28 @@
                   placeholder="请输入并选择..."
               />
               <ul v-if="nameSuggestions.length" class="suggestion-list">
-                <li v-for="item in nameSuggestions" :key="item.code" @mousedown.prevent="selectSuggestion(item)">
-                  {{ item.name }} ({{ item.code }})
+                <li v-for="item in nameSuggestions" :key="item.fund_code || item.code"
+                    @mousedown.prevent="selectSuggestion(item)">
+                  <!-- 股票显示 name/code，基金显示 short_name/fund_code -->
+                  <template v-if="newInvestment.type === 'stock'">
+                    {{ item.name }} ({{ item.code }})
+                  </template>
+                  <template v-else>
+                    {{ item.short_name }} ({{ item.fund_code }})
+                  </template>
                 </li>
+
               </ul>
             </div>
             <div class="form-group">
-              <label for="investment-symbol">代码/符号</label>
+              <label for="investment-symbol">代码</label>
               <input
                   type="text"
                   id="investment-symbol"
                   v-model="newInvestment.symbol"
                   readonly
                   required
-                  placeholder="自动填充"
+                  placeholder="请输入投资项目代码..."
               />
             </div>
             <!-- 其它表单同原来 -->
@@ -93,7 +121,7 @@
                   id="investment-amount"
                   v-model="newInvestment.amount"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
               />
             </div>
@@ -189,7 +217,7 @@
 
 <script>
 import axios from 'axios'; // 新增
-import { Chart, registerables } from 'chart.js';
+import {Chart, registerables} from 'chart.js';
 import * as echarts from 'echarts'; // 新增
 
 Chart.register(...registerables);
@@ -319,15 +347,21 @@ export default {
       // 主动请求Allen的所有数据
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       let data = await resp.json();
-      // 保证为数组
+      if (!Array.isArray(data)) data = [data];
+      this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
+      this.filterPortfolio();
+    },
+    async refreshAndMergePortfolio() {
+      // 主动拉取所有数据
+      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+      let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
       // 合并同名项目
-      const merged = this.mergePortfolioItems(data);
-      this.portfolioItems = merged;
+      this.portfolioItems = this.mergePortfolioItems(data);
+      // 再次根据当前搜索词过滤
       this.filterPortfolio();
     },
     mergePortfolioItems(items) {
-      // 如上函数体
       const map = {};
       items.forEach(item => {
         const key = `${item.investmentName}_${item.investmentCode}_${item.investmentType}`;
@@ -342,6 +376,7 @@ export default {
       });
       return Object.values(map);
     },
+
     filterPortfolio() {
       if (!this.searchQuery) {
         this.filteredItems = [...this.portfolioItems];
@@ -357,22 +392,15 @@ export default {
 
     async fetchPortfolioItems() {
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
-      const data = await resp.json();
-      if (Array.isArray(data)) {
-        // 返回的是数组
-        this.portfolioItems = data;
-      } else if (data && typeof data === 'object') {
-        // 返回的是单个对象
-        this.portfolioItems = [data];
-      } else {
-        // 其他情况，设为空
-        this.portfolioItems = [];
-      }
-
-      // 刷新搜索结果
+      let data = await resp.json();
+      if (!Array.isArray(data)) data = [data];
+      this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
       this.filterPortfolio();
     },
-    formatCurrency(val) { return '¥' + Number(val).toFixed(2); },
+
+    formatCurrency(val) {
+      return '¥' + Number(val).toFixed(2);
+    },
 
     async fetchStocks() {
       const res = await fetch('http://localhost:3000/api/stocks');
@@ -381,6 +409,8 @@ export default {
     async fetchFunds() {
       const res = await fetch('http://localhost:3000/api/funds');
       this.allFunds = await res.json();
+      console.log("基金列表：", this.allFunds); // 加这个看有无数据
+
     },
     onNameInput(e) {
       const val = e.target.value.trim();
@@ -389,18 +419,32 @@ export default {
         this.nameSuggestions = [];
         return;
       }
-      // 中文名/拼音/简拼/代码都可模糊
-      this.nameSuggestions = list.filter(item =>
-          item.name.includes(val) ||
-          (item.code && item.code.includes(val))
-      ).slice(0, 10); // 最多展示10条
+      if (this.newInvestment.type === 'stock') {
+        this.nameSuggestions = list.filter(item =>
+            (item.name && item.name.includes(val)) ||
+            (item.code && item.code.includes(val))
+        ).slice(0, 50);
+      } else {
+        // 基金用 short_name 和 fund_code
+        this.nameSuggestions = list.filter(item =>
+            (item.short_name && item.short_name.includes(val)) ||
+            (item.fund_code && item.fund_code.includes(val))
+        ).slice(0, 50);
+      }
     },
     // 用户选中建议后填充
     selectSuggestion(item) {
-      this.newInvestment.name = item.name;
-      this.newInvestment.symbol = item.code;
+      if (this.newInvestment.type === 'stock') {
+        this.newInvestment.name = item.name;
+        this.newInvestment.symbol = item.code;
+      } else {
+        // 基金
+        this.newInvestment.name = item.short_name;
+        this.newInvestment.symbol = item.fund_code;
+      }
       this.nameSuggestions = [];
-    },
+    }
+    ,
     async addInvestment() {
       // 这里建议参数补全校验
       const postBody = {
@@ -422,15 +466,11 @@ export default {
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(postBody)
         });
-        // 这里根据后端实际返回格式调整，通常是 {success: true/false, ...}
         const result = await resp.json();
-        console.log('API result:', result);
         if (result.success) {
           alert("添加投资项目成功！");
-          // 清空表单（如有需要）
-          // 重点：添加成功后拉取最新列表并刷新搜索
+          // 重点：添加成功后拉取最新列表并自动合并
           await this.fetchPortfolioItems();
-          this.filterPortfolio();
           this.newInvestment = {
             type: 'stock',
             name: '',
@@ -438,8 +478,6 @@ export default {
             amount: '',
             purchaseDate: new Date().toISOString().split('T')[0]
           };
-          // 可以刷新投资组合列表
-          this.filterPortfolio && this.filterPortfolio();
         } else {
           alert("添加有误：" + (result.message || "请检查数据"));
         }
@@ -456,7 +494,8 @@ export default {
       try {
         const username = this.itemToDelete.username || 'Allen'; // 保险起见
         const code = this.itemToDelete.investmentCode;
-        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}`;
+        const type = this.itemToDelete.investmentType;
+        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentCode=${encodeURIComponent(type)}`;
         const resp = await fetch(url, {
           method: 'DELETE'
         });
@@ -472,10 +511,6 @@ export default {
         alert('删除失败：' + err.message);
       }
     },
-
-
-
-
 
 
     // // 股票图表相关方法
@@ -1052,12 +1087,14 @@ h2 {
   background: #f9fafc;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .search-bar input:focus {
   border-color: #409eff;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(64,158,255,0.08);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.08);
   outline: none;
 }
+
 .search-bar button {
   height: 38px;
   padding: 0 28px;
@@ -1068,12 +1105,13 @@ h2 {
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(100,140,255,0.10);
+  box-shadow: 0 2px 8px rgba(100, 140, 255, 0.10);
   transition: background 0.2s, box-shadow 0.2s;
 }
+
 .search-bar button:hover {
   background: linear-gradient(90deg, #36bb7e 0%, #3b67ea 100%);
-  box-shadow: 0 4px 16px rgba(100,140,255,0.18);
+  box-shadow: 0 4px 16px rgba(100, 140, 255, 0.18);
 }
 
 .investment-items {
@@ -1081,6 +1119,21 @@ h2 {
   padding: 0;
   margin: 0;
 }
+
+.investment-row {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px #e4e7ed33;
+  padding: 20px 28px;
+  margin-bottom: 18px;
+}
+
+/*.investment-row:hover {*/
+/*  box-shadow: 0 8px 28px rgba(41, 57, 77, 0.11), 0 2px 8px #42d39233;*/
+/*  transform: translateY(-2px) scale(1.01);*/
+/*}*/
 
 .investment-item {
   display: flex;
@@ -1094,9 +1147,117 @@ h2 {
   border-bottom: none;
 }
 
+
+.item-info {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .item-info h3 {
   margin: 0 0 5px;
   font-size: 16px;
+}
+
+.item-sub {
+  font-size: 15px;
+  color: #8a98b6;
+  font-family: 'Arial', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+}
+.type-label {
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #24b29f;
+  background: #e2f8f5;
+  padding: 1px 10px;
+  border-radius: 7px;
+}
+.item-title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #22334d;
+  margin-bottom: 4px;
+  font-family: 'Arial Black', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+}
+.type-label.stock {
+  color: #409eff;
+  background: #e8f3ff;
+}
+.type-label.fund {
+  color: #ff8800;
+  background: #fff6e1;
+}
+
+.item-amount {
+  flex: 0 0 110px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #22334d;
+  letter-spacing: 1px;
+}
+
+.delete-btn.modern-delete {
+  margin-left: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: transform 0.15s;
+}
+.delete-btn.modern-delete:hover {
+  transform: scale(1.18);
+  filter: brightness(1.14);
+}
+.name {
+  font-weight: 600;
+  font-size: 17px;
+  color: #22334d;
+}
+
+.code {
+  font-size: 14px;
+  color: #7689a7;
+  margin-left: 6px;
+}
+
+.type-tag {
+  font-size: 13px;
+  background: #e0f7fa;
+  color: #00796b;
+  padding: 2px 10px;
+  border-radius: 8px;
+  margin-left: 10px;
+  font-weight: 500;
+}
+
+.item-amount {
+  font-size: 18px;
+  font-weight: bold;
+  color: #273c75;
+  flex: 1 1 120px;
+  text-align: center;
+}
+
+.delete-btn.modern-delete {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: transform 0.1s;
+}
+
+.delete-btn.modern-delete:hover {
+  transform: scale(1.16);
+  filter: brightness(1.15);
 }
 
 .item-info p {
@@ -1138,7 +1299,7 @@ h2 {
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .form-group label {
@@ -1346,4 +1507,21 @@ h2 {
     margin-bottom: 14px;
   }
 }
+
+/*.add-investment {*/
+/*  max-width: 430px;*/
+/*  margin: 0 auto;*/
+/*}*/
+
+.add-investment form {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 </style>
