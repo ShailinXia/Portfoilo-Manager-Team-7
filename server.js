@@ -145,6 +145,20 @@ function fetchStockData() {
 
 fetchStockData(); // 启动时获取一次数据
 
+function fetchFundsData() {
+  axios
+      .get("http://localhost:3000/api/funds?page=1&limit=50&order=desc")
+      .then((response) => {
+        stockData = response.data; // 保存为 JSON 格式
+        console.log("基金数据:", stockData);
+      })
+      .catch((error) => {
+        console.error("请求失败:", error);
+      });
+}
+
+fetchFundsData(); // 启动时获取一次数据
+
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from Node.js backend!" });
 });
@@ -166,8 +180,22 @@ function fetchHistoryStockData() {
     });
 }
 
+function fetchHistoryFundsData() {
+  axios
+      .get("http://localhost:3000/api/funds/000001/history?start=2025-01-01&end=2025-07-31")
+      .then((response) => {
+        stockHistory = response.data; // 保存为 JSON 格式
+        console.log("基金历史数据:", stockHistory);
+      })
+      .catch((error) => {
+        console.error("请求失败:", error);
+      });
+}
+
 fetchStockData(); // 启动时获取一次数据
+fetchFundsData();
 fetchHistoryStockData(); // 启动时获取一次历史数据
+fetchHistoryFundsData(); // 启动时获取一次历史数据
 
 
 
@@ -180,8 +208,26 @@ app.get("/api/stocks", (req, res) => {
   }
 });
 
+// 示例 API 路由
+app.get("/api/funds", (req, res) => {
+  if (stockData) {
+    res.json(stockData); // 返回 JSON 格式数据
+  } else {
+    res.status(503).json({ error: "数据未准备好" });
+  }
+});
+
 // 路由获取股票历史数据
 app.get("/api/stocks/000001/history", (req, res) => {
+  if (stockHistory) {
+    res.json(stockHistory); // 返回 JSON 格式数据
+  } else {
+    res.status(503).json({ error: "数据未准备好" });
+  }
+});
+
+// 路由获取股票历史数据
+app.get("/api/funds/000001/history", (req, res) => {
   if (stockHistory) {
     res.json(stockHistory); // 返回 JSON 格式数据
   } else {
