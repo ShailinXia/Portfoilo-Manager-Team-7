@@ -336,7 +336,17 @@ export default {
     async fetchPortfolioItems() {
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       const data = await resp.json();
-      this.portfolioItems = Array.isArray(data) ? data : (data.data || []);
+      if (Array.isArray(data)) {
+        // 返回的是数组
+        this.portfolioItems = data;
+      } else if (data && typeof data === 'object') {
+        // 返回的是单个对象
+        this.portfolioItems = [data];
+      } else {
+        // 其他情况，设为空
+        this.portfolioItems = [];
+      }
+
       // 刷新搜索结果
       this.filterPortfolio();
     },
