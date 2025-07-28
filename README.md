@@ -180,3 +180,21 @@ docker-compose up
 > ![Frontend Application](./images/frontend_2.png)
 
 ## 🤜Acknowledgements🤛
+
+```text
+    Frist of all, we will gratitude to the HSBC for providing us with this opportunity to work on a  
+practical project. This project has allowed us to apply our theoretical knowledge in a real-world
+context, enhancing our understanding of software development and teamwork.
+    During the development of this project, we have profoundly realized the crucial role of teamwork
+and technical communication in achieving success. First and foremost, we extend our sincere gratitude
+to Mr. Richard Mackriell and Professor Luo for their dedicated guidance. Your insightful suggestions
+and system architecture optimizations have laid a solid technical foundation for this project.Secondly,
+we deeply appreciate the outstanding contributions from all team members: Shailin Xia and Allen Zhang 
+for their professional expertise in full-stack development;Tom He and Alfred Lu for their innovative
+thinking in UI/UX design.Kelly Suo for her meticulous work on project documentation.Special thanks to 
+Group One colleagues for providing valuable datasets that significantly supported our testing and 
+validation processes.
+    Lastly, we are grateful to the company for offering this practical platform that bridges theoretical 
+knowledge and engineering practice again. We look forward to more collaboration opportunities to create 
+greater technological value together.
+```
