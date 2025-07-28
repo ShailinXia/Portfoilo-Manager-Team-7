@@ -1036,15 +1036,44 @@ h2 {
 }
 
 .search-bar {
-  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 18px 0;
 }
 
 .search-bar input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  flex: 1;
+  height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid #d7dde8;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #f9fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-bar input:focus {
+  border-color: #409eff;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(64,158,255,0.08);
+  outline: none;
+}
+.search-bar button {
+  height: 38px;
+  padding: 0 28px;
+  background: linear-gradient(90deg, #42d392 0%, #647eff 100%);
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(100,140,255,0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.search-bar button:hover {
+  background: linear-gradient(90deg, #36bb7e 0%, #3b67ea 100%);
+  box-shadow: 0 4px 16px rgba(100,140,255,0.18);
 }
 
 .investment-items {
