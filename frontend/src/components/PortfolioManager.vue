@@ -62,8 +62,8 @@
               <select id="investment-type" v-model="newInvestment.type" required>
                 <option value="stock">股票</option>
                 <option value="fund">基金</option>
-                <option value="bond">债券</option>
-                <option value="crypto">加密货币</option>
+<!--                <option value="bond">债券</option>-->
+<!--                <option value="crypto">加密货币</option>-->
                 <option value="other">其他</option>
               </select>
             </div>
@@ -136,9 +136,14 @@
         <!--          </div>-->
         <!--        </div>-->
         <div class="card performance-chart">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <h2>股票历史数据</h2>
-            <select v-model="selectedStockCode" @change="fetchStockData" style="height:32px; font-size:15px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
+
+            <select
+                v-model="selectedStockCode"
+                @change="fetchStockData"
+                class="custom-select"
+            >
               <option v-for="code in stockCodes" :value="code" :key="code">{{ code }}</option>
             </select>
           </div>
@@ -148,16 +153,16 @@
             <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">
               {{ chartLoading ? '加载中...' : '刷新数据' }}
             </button>
-            <div class="date-range-container">
-              <div class="date-input-group">
-                <label>开始日期: </label>
-                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>
-              </div>
-              <div class="date-input-group">
-                <label>结束日期: </label>
-                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>
-              </div>
-            </div>
+            <!--            <div class="date-range-container">-->
+            <!--              <div class="date-input-group">-->
+            <!--                <label>开始日期: </label>-->
+            <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
+            <!--              </div>-->
+            <!--              <div class="date-input-group">-->
+            <!--                <label>结束日期: </label>-->
+            <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
+            <!--              </div>-->
+            <!--            </div>-->
           </div>
         </div>
 
@@ -553,6 +558,7 @@ export default {
     updateSelectedStockName() {
       // 用 code 找到 name
       const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
+      console.log(stock)
       this.selectedStockName = stock ? stock.name : '';
     },
     onSelectStock(code) {
@@ -596,6 +602,7 @@ export default {
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
         this.originStockData = rawData;
         this.renderEcharts();
+        this.stockData = response.data; // 更新数据
       } catch (err) {
         this.chartError = '股票历史数据加载失败';
       } finally {
@@ -641,8 +648,8 @@ export default {
             saveAsImage: {}
           }
         },
-        xAxis: { type: 'category', data: dates, boundaryGap: false },
-        yAxis: { type: 'value', min, max, boundaryGap: [0, '100%'] },
+        xAxis: {type: 'category', data: dates, boundaryGap: false},
+        yAxis: {type: 'value', min, max, boundaryGap: [0, '100%']},
 
         dataZoom: [
           {
@@ -666,8 +673,8 @@ export default {
             },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgb(255, 158, 68)' },
-                { offset: 1, color: 'rgb(255, 70, 131)' }
+                {offset: 0, color: 'rgb(255, 158, 68)'},
+                {offset: 1, color: 'rgb(255, 70, 131)'}
               ])
             },
             data: prices
@@ -747,6 +754,27 @@ export default {
   padding: 20px;
   color: #333;
 }
+
+/* 可以放在你的全局样式文件或组件内style标签里 */
+.custom-select {
+  height: 32px;
+  font-size: 15px;
+  padding: 0 28px 0 12px;
+  border: 1.5px solid #d9d9d9;
+  border-radius: 8px;
+  background: #f8fafc url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23333' stroke-width='1.5'/%3E%3C/svg%3E%0A") no-repeat right 12px center/16px 10px;
+  transition: border 0.2s;
+  outline: none;
+  color: #2c3e50;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.custom-select:focus {
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
+}
+
 
 .header {
   margin-bottom: 30px;
