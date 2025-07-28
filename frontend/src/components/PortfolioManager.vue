@@ -31,15 +31,11 @@
         <div class="card portfolio-list">
           <h2>我的投资组合</h2>
           <div class="search-bar">
-            <input
-                type="text"
-                v-model="searchQuery"
-                placeholder="搜索投资项目..."
-                @input="filterPortfolio"
-            />
+            <input v-model="searchQuery" placeholder="搜索投资项目..." @keyup.enter="onSearch"/>
+            <button @click="onSearch">搜索</button>
           </div>
           <ul class="investment-items">
-            <li v-for="item in filteredItems" :key="item.investmentCode + item.investmentDate">
+            <li v-for="item in filteredItems" :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType">
               <div class="item-info">
                 <h3>{{ item.investmentName }}</h3>
                 <p>{{ item.investmentCode }} · {{ item.investmentType }}</p>
@@ -181,7 +177,7 @@
     <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal">
         <h3>确认删除</h3>
-        <p>确定要从投资组合中删除 {{ itemToDelete.name }} ({{ itemToDelete.symbol }}) 吗？</p>
+        <p>确定要从投资组合中删除 {{ itemToDelete.investmentName }} ({{ itemToDelete.investmentCode }}) 吗？</p>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="cancel-btn">取消</button>
           <button @click="deleteInvestment" class="confirm-btn">确认删除</button>
@@ -319,6 +315,33 @@ export default {
         currency: 'USD'
       }).format(value);
     },
+    async onSearch() {
+      // 主动请求Allen的所有数据
+      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+      let data = await resp.json();
+      // 保证为数组
+      if (!Array.isArray(data)) data = [data];
+      // 合并同名项目
+      const merged = this.mergePortfolioItems(data);
+      this.portfolioItems = merged;
+      this.filterPortfolio();
+    },
+    mergePortfolioItems(items) {
+      // 如上函数体
+      const map = {};
+      items.forEach(item => {
+        const key = `${item.investmentName}_${item.investmentCode}_${item.investmentType}`;
+        if (map[key]) {
+          map[key].investmentAmount += Number(item.investmentAmount);
+        } else {
+          map[key] = {
+            ...item,
+            investmentAmount: Number(item.investmentAmount)
+          };
+        }
+      });
+      return Object.values(map);
+    },
     filterPortfolio() {
       if (!this.searchQuery) {
         this.filteredItems = [...this.portfolioItems];
@@ -326,12 +349,11 @@ export default {
       }
       const query = this.searchQuery.toLowerCase();
       this.filteredItems = this.portfolioItems.filter(item =>
-          item.name.toLowerCase().includes(query) ||
-          item.symbol.toLowerCase().includes(query) ||
-          item.type.toLowerCase().includes(query)
+          item.investmentName.toLowerCase().includes(query) ||
+          (item.investmentCode && item.investmentCode.toLowerCase().includes(query)) ||
+          item.investmentType.toLowerCase().includes(query)
       );
     },
-
 
     async fetchPortfolioItems() {
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
@@ -430,13 +452,27 @@ export default {
       this.itemToDelete = item;
       this.showDeleteModal = true;
     },
-    deleteInvestment() {
-      this.portfolioItems = this.portfolioItems.filter(item => item.id !== this.itemToDelete.id);
-      this.filterPortfolio();
-      this.showDeleteModal = false;
-      this.itemToDelete = null;
-      this.updateAllocationChart();
+    async deleteInvestment() {
+      try {
+        const username = this.itemToDelete.username || 'Allen'; // 保险起见
+        const code = this.itemToDelete.investmentCode;
+        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}`;
+        const resp = await fetch(url, {
+          method: 'DELETE'
+        });
+        const result = await resp.json();
+        if (result.success || (result.message && result.message.includes('成功'))) {
+          await this.onSearch(); // 刷新
+          this.showDeleteModal = false;
+          this.itemToDelete = null;
+        } else {
+          alert('删除失败：' + (result.message || '未知错误'));
+        }
+      } catch (err) {
+        alert('删除失败：' + err.message);
+      }
     },
+
 
 
 
