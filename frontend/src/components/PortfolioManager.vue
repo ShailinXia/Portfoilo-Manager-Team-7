@@ -39,16 +39,13 @@
             />
           </div>
           <ul class="investment-items">
-            <li v-for="item in filteredItems" :key="item.id" class="investment-item">
+            <li v-for="item in portfolioItems" :key="item.investmentCode + item.investmentDate">
               <div class="item-info">
-                <h3>{{ item.name }}</h3>
-                <p>{{ item.symbol }} · {{ item.type }}</p>
+                <h3>{{ item.investmentName }}</h3>
+                <p>{{ item.investmentCode }} · {{ item.investmentType }}</p>
               </div>
               <div class="item-value">
-                <p>{{ formatCurrency(item.currentValue) }}</p>
-                <p :class="{ positive: item.profit >= 0, negative: item.profit < 0 }">
-                  {{ formatCurrency(item.profit) }} ({{ item.profitPercentage }}%)
-                </p>
+                <p>{{ formatCurrency(item.investmentAmount) }}</p>
               </div>
               <button class="delete-btn" @click="confirmDelete(item)">×</button>
             </li>
@@ -205,41 +202,9 @@ export default {
   name: 'PortfolioManager',
   data() {
     return {
-      portfolioItems: [
-        {
-          id: 1,
-          name: '苹果公司',
-          symbol: 'AAPL',
-          type: 'stock',
-          amount: 5000,
-          purchaseDate: '2022-01-15',
-          currentValue: 6200,
-          profit: 1200,
-          profitPercentage: 24
-        },
-        {
-          id: 2,
-          name: '标普500指数基金',
-          symbol: 'VOO',
-          type: 'fund',
-          amount: 8000,
-          purchaseDate: '2021-11-20',
-          currentValue: 8500,
-          profit: 500,
-          profitPercentage: 6.25
-        },
-        {
-          id: 3,
-          name: '比特币',
-          symbol: 'BTC',
-          type: 'crypto',
-          amount: 3000,
-          purchaseDate: '2023-03-10',
-          currentValue: 4500,
-          profit: 1500,
-          profitPercentage: 50
-        }
-      ],
+      portfolioItems: [],
+
+
       investmentTypes: [
         {value: 'stock', label: '股票'},
         {value: 'fund', label: '基金'}
@@ -317,6 +282,8 @@ export default {
     this.initEcharts();
     this.fetchStockData();
     this.fetchStockList();
+    this.fetchPortfolioItems();
+
 
     window.addEventListener('resize', this.resizeEcharts);
   },
@@ -364,6 +331,13 @@ export default {
           item.type.toLowerCase().includes(query)
       );
     },
+    async fetchPortfolioItems() {
+      const resp = await fetch('http://localhost:3000/api/userInfo/');
+      const data = await resp.json();
+      this.portfolioItems = Array.isArray(data) ? data : (data.data || []);
+    },
+    formatCurrency(val) { return '¥' + Number(val).toFixed(2); },
+
     async fetchStocks() {
       const res = await fetch('http://localhost:3000/api/stocks');
       this.allStocks = await res.json();
@@ -414,6 +388,7 @@ export default {
         });
         // 这里根据后端实际返回格式调整，通常是 {success: true/false, ...}
         const result = await resp.json();
+        console.log('API result:', result);
         if (result.success) {
           alert("添加投资项目成功！");
           // 清空表单（如有需要）
@@ -434,53 +409,6 @@ export default {
       }
     },
 
-    // addInvestment() {
-    //   // 在实际应用中，这里会有API调用
-    //   const newId = this.portfolioItems.length > 0
-    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-    //       : 1;
-    //
-    //   // 模拟计算当前价值和收益
-    //   this.filteredItems = this.portfolioItems.filter(item =>
-    //       item.name.toLowerCase().includes(query) ||
-    //       item.symbol.toLowerCase().includes(query) ||
-    //       item.type.toLowerCase().includes(query)
-    //   );
-    // },
-    //
-    // addInvestment() {
-    //   const newId = this.portfolioItems.length > 0
-    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-    //       : 1;
-    //
-    //   const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
-    //   const profit = currentValue - this.newInvestment.amount;
-    //   const profitPercentage = (profit / this.newInvestment.amount) * 100;
-    //   const newItem = {
-    //     id: newId,
-    //     name: this.newInvestment.name,
-    //     symbol: this.newInvestment.symbol.toUpperCase(),
-    //     type: this.newInvestment.type,
-    //     amount: parseFloat(this.newInvestment.amount),
-    //     purchaseDate: this.newInvestment.purchaseDate,
-    //     currentValue: parseFloat(currentValue.toFixed(2)),
-    //     profit: parseFloat(profit.toFixed(2)),
-    //     profitPercentage: parseFloat(profitPercentage.toFixed(2))
-    //   };
-    //
-    //   this.portfolioItems.push(newItem);
-    //   this.filterPortfolio();
-    //   this.updateAllocationChart();
-    //
-    //   this.newInvestment = {
-    //     type: 'stock',
-    //     name: '',
-    //     symbol: '',
-    //     amount: 0,
-    //     purchaseDate: new Date().toISOString().split('T')[0]
-    //   };
-    // },
-
     confirmDelete(item) {
       this.itemToDelete = item;
       this.showDeleteModal = true;
@@ -492,6 +420,10 @@ export default {
       this.itemToDelete = null;
       this.updateAllocationChart();
     },
+
+
+
+
 
     // // 股票图表相关方法
     // processStockData(data) {
