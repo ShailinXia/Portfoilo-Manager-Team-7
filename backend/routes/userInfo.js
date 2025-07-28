@@ -61,7 +61,8 @@ router.post("/", (req, res) => {
   try {
     insertMany(dataArray);
     res.status(200).json({
-      message: "用户信息批量添加成功",
+      success: true,
+      message: "用户信息添加成功",
       count: dataArray.length,
       data: dataArray,
     });

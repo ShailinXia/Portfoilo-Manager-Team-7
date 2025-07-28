@@ -73,7 +73,7 @@
                   placeholder="请输入并选择..."
               />
               <ul v-if="nameSuggestions.length" class="suggestion-list">
-                <li v-for="item in nameSuggestions" @mousedown.prevent="selectSuggestion(item)">
+                <li v-for="item in nameSuggestions" :key="item.code" @mousedown.prevent="selectSuggestion(item)">
                   {{ item.name }} ({{ item.code }})
                 </li>
               </ul>

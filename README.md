@@ -10,6 +10,18 @@
 - 😎`Member 4`: `Tom He`
 - 🙃`Member 5`: `Alfred Lu`
 
+## 🛠Tech Stack
+
+```text
+- Frontend: Vue.js, Vite, Axios, ECharts
+- Backend: Node.js, Express, SQLite, Axios
+- Database: SQLite
+- Docker: Docker Compose
+- Other: Postman for API testing
+```
+
+## 📖Features
+
 ## 🎬Project Structure
 
 ```text

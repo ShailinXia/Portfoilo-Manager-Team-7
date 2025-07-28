@@ -3,6 +3,6 @@ node_modules/
 log/
 **/db/
 .idea/
+server.js
 **/.vscode/
 structure.txt
-server.js
