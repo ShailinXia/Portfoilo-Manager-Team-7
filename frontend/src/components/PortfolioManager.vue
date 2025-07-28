@@ -60,22 +60,25 @@
             <div class="form-group">
               <label for="investment-type">投资类型</label>
               <select id="investment-type" v-model="newInvestment.type" required>
-                <option value="stock">股票</option>
-                <option value="fund">基金</option>
-<!--                <option value="bond">债券</option>-->
-<!--                <option value="crypto">加密货币</option>-->
-                <option value="other">其他</option>
+                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>
               </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="position:relative">
               <label for="investment-name">名称</label>
               <input
                   type="text"
                   id="investment-name"
                   v-model="newInvestment.name"
+                  @input="onNameInput"
+                  autocomplete="off"
                   required
-                  placeholder="例如: 苹果公司"
+                  placeholder="请输入并选择..."
               />
+              <ul v-if="nameSuggestions.length" class="suggestion-list">
+                <li v-for="item in nameSuggestions" @mousedown.prevent="selectSuggestion(item)">
+                  {{ item.name }} ({{ item.code }})
+                </li>
+              </ul>
             </div>
             <div class="form-group">
               <label for="investment-symbol">代码/符号</label>
@@ -83,10 +86,12 @@
                   type="text"
                   id="investment-symbol"
                   v-model="newInvestment.symbol"
+                  readonly
                   required
-                  placeholder="例如: AAPL"
+                  placeholder="自动填充"
               />
             </div>
+            <!-- 其它表单同原来 -->
             <div class="form-group">
               <label for="investment-amount">投资金额</label>
               <input
@@ -234,6 +239,10 @@ export default {
           profitPercentage: 50
         }
       ],
+      investmentTypes: [
+        {value: 'stock', label: '股票'},
+        {value: 'fund', label: '基金'}
+      ],
       newInvestment: {
         type: 'stock',
         name: '',
@@ -241,6 +250,10 @@ export default {
         amount: 0,
         purchaseDate: new Date().toISOString().split('T')[0]
       },
+      allStocks: [],
+      allFunds: [],
+      nameSuggestions: [],
+      loadingNames: false,
       searchQuery: '',
       filteredItems: [],
       showDeleteModal: false,
@@ -256,7 +269,7 @@ export default {
       chartError: null,
 
       stocksList: [],
-      selectedStockCode: '',
+      selectedStockCode: '000001',
       selectedStockName: '',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
@@ -314,7 +327,21 @@ export default {
   watch: {
     selectedStockCode: 'fetchStockData',
     chartStartDate: 'fetchStockData',
-    chartEndDate: 'fetchStockData'
+    chartEndDate: 'fetchStockData',
+    'newInvestment.type': {
+      immediate: true,
+      handler(val) {
+        if (val === 'stock') {
+          this.fetchStocks();
+        } else if (val === 'fund') {
+          this.fetchFunds();
+        }
+        // 清空输入
+        this.newInvestment.name = '';
+        this.newInvestment.symbol = '';
+        this.nameSuggestions = [];
+      }
+    }
   },
 
   methods: {
@@ -336,6 +363,57 @@ export default {
           item.type.toLowerCase().includes(query)
       );
     },
+    async fetchStocks() {
+      const res = await fetch('http://localhost:8080/api/stocks');
+      this.allStocks = await res.json();
+    },
+    async fetchFunds() {
+      const res = await fetch('http://localhost:8080/api/funds');
+      this.allFunds = await res.json();
+    },
+    onNameInput(e) {
+      const val = e.target.value.trim();
+      let list = this.newInvestment.type === 'stock' ? this.allStocks : this.allFunds;
+      if (!val) {
+        this.nameSuggestions = [];
+        return;
+      }
+      // 中文名/拼音/简拼/代码都可模糊
+      this.nameSuggestions = list.filter(item =>
+          item.name.includes(val) ||
+          (item.code && item.code.includes(val))
+      ).slice(0, 10); // 最多展示10条
+    },
+    // 用户选中建议后填充
+    selectSuggestion(item) {
+      this.newInvestment.name = item.name;
+      this.newInvestment.symbol = item.code;
+      this.nameSuggestions = [];
+    },
+    async addInvestment() {
+      // 这里建议参数补全校验
+      const postBody = {
+        name: this.newInvestment.name,
+        code: this.newInvestment.symbol,
+        type: this.newInvestment.type,
+        amount: this.newInvestment.amount,
+        purchaseDate: this.newInvestment.purchaseDate
+      };
+      // 假设你的后端api/userinfo为POST方式插入
+      const resp = await fetch('http://localhost:8080/api/userinfo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(postBody)
+      });
+      const result = await resp.json();
+      if (result.success) {
+        // 本地也添加/刷新数据
+        this.portfolioItems.push(postBody);
+        // 还可以清空表单、弹窗提醒
+        this.$message && this.$message.success && this.$message.success("添加成功！");
+      }
+    },
+
     addInvestment() {
       // 在实际应用中，这里会有API调用
       const newId = this.portfolioItems.length > 0
@@ -590,9 +668,17 @@ export default {
     async fetchStockData() {
       this.chartLoading = true;
       this.chartError = null;
+      if (!this.selectedStockCode) {
+        this.chartError = '请先选择股票代码';
+        this.chartLoading = false;
+        return;
+      }
+      console.log('fetchStockData selectedStockCode:', this.selectedStockCode);
+
       try {
         // 日期参数可选
         let url = `http://localhost:8080/api/stocks/${this.selectedStockCode}/history`;
+        // let url = `http://localhost:8080/api/stocks/000001/history`;
         const params = {};
         if (this.chartStartDate) params.start = this.chartStartDate;
         if (this.chartEndDate) params.end = this.chartEndDate;
@@ -747,6 +833,30 @@ export default {
 </script>
 
 <style scoped>
+
+.suggestion-list {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ddd;
+  z-index: 9;
+  left: 0;
+  right: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestion-list li {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.suggestion-list li:hover {
+  background: #f3f6fa;
+}
+
 .portfolio-manager {
   font-family: 'Arial', sans-serif;
   /*max-width: 1200px;*/
