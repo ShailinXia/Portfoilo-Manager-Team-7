@@ -39,7 +39,7 @@
             />
           </div>
           <ul class="investment-items">
-            <li v-for="item in portfolioItems" :key="item.investmentCode + item.investmentDate">
+            <li v-for="item in filteredItems" :key="item.investmentCode + item.investmentDate">
               <div class="item-info">
                 <h3>{{ item.investmentName }}</h3>
                 <p>{{ item.investmentCode }} · {{ item.investmentType }}</p>
@@ -331,10 +331,14 @@ export default {
           item.type.toLowerCase().includes(query)
       );
     },
+
+
     async fetchPortfolioItems() {
-      const resp = await fetch('http://localhost:3000/api/userInfo/');
+      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       const data = await resp.json();
       this.portfolioItems = Array.isArray(data) ? data : (data.data || []);
+      // 刷新搜索结果
+      this.filterPortfolio();
     },
     formatCurrency(val) { return '¥' + Number(val).toFixed(2); },
 
@@ -392,6 +396,9 @@ export default {
         if (result.success) {
           alert("添加投资项目成功！");
           // 清空表单（如有需要）
+          // 重点：添加成功后拉取最新列表并刷新搜索
+          await this.fetchPortfolioItems();
+          this.filterPortfolio();
           this.newInvestment = {
             type: 'stock',
             name: '',
