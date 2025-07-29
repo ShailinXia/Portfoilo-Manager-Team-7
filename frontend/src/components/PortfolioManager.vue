@@ -31,7 +31,15 @@
         <div class="card portfolio-list">
           <h2>我的投资组合</h2>
           <div class="search-bar">
-            <input v-model="searchQuery" placeholder="搜索投资项目..." @keyup.enter="onSearch"/>
+            <input v-model="searchQuery" placeholder="请输入名称或代码..." @keyup.enter="onSearch"/>
+            <input
+                type="date"
+                v-model="searchDate"
+                class="date-picker"
+                :max="today"
+                placeholder="选择日期"
+            />
+<!--            <button @click="searchDate = ''" class="clear-date-btn">清除日期</button>-->
             <button @click="onSearch">搜索</button>
           </div>
           <ul class="investment-items">
@@ -57,12 +65,15 @@
               </div>
 
               <!-- 右侧：删除按钮 -->
-              <button class="delete-btn modern-delete" @click="confirmDelete(item)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <circle cx="9" cy="9" r="9" fill="#F44336"/>
-                  <path d="M6 6L12 12M12 6L6 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <button class="sell-btn" @click="confirmDelete(item)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: middle;">
+                  <circle cx="9" cy="9" r="9" fill="#2196F3"/>
+                  <!-- 钱袋icon（可替换为其他卖出icon） -->
+                  <path d="M9 4 v4 m0 0 l3 3 m-3-3 l-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
                 </svg>
+                <span style="margin-left: 6px; color:#fff; font-weight:600;">卖出</span>
               </button>
+
             </li>
           </ul>
 
@@ -204,7 +215,7 @@
     <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal">
         <h3>确认删除</h3>
-        <p>确定要从投资组合中删除 {{ itemToDelete.investmentName }} ({{ itemToDelete.investmentCode }}) 吗？</p>
+        <p>确定要从投资组合卖出 {{ itemToDelete.investmentName }} ({{ itemToDelete.investmentCode }}) 吗？</p>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="cancel-btn">取消</button>
           <button @click="deleteInvestment" class="confirm-btn">确认删除</button>
@@ -227,6 +238,12 @@ export default {
     return {
       portfolioItems: [],
 
+      searchQuery: "",
+      searchDate: "",
+      today: new Date().toISOString().split('T')[0],
+      searchDate: new Date().toISOString().split('T')[0], // 默认今天// 最大可选今天
+      allItems: [],  // 全部投资项目
+      filteredItems: [],
 
       investmentTypes: [
         {value: 'stock', label: '股票'},
@@ -318,6 +335,8 @@ export default {
     this.fetchStockData();
     this.fetchStockList();
     this.fetchPortfolioItems();
+    this.onSearch();
+
 
 
     window.addEventListener('resize', this.resizeEcharts);
@@ -374,13 +393,35 @@ export default {
       }).format(value);
     },
     async onSearch() {
-      // 主动请求Allen的所有数据
+      // 1. 拉取全部数据
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
-      this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
-      this.filterPortfolio();
+
+      let query = this.searchQuery.trim();
+      let date = this.searchDate;
+
+      // ⭐ 根据是否选日期决定合并方式
+      let merged;
+      if (!date) {
+        // 不选日期，全合并
+        merged = this.mergePortfolioItems(data, false);
+      } else {
+        // 选了日期，按日期合并
+        // 只要当天的（避免多天数据累加）
+        const filtered = data.filter(item => item.investmentDate === date);
+        merged = this.mergePortfolioItems(filtered, true);
+      }
+
+      // 搜索条件筛选
+      this.filteredItems = merged.filter(item => {
+        let match = !query ||
+            (item.investmentName && item.investmentName.includes(query)) ||
+            (item.investmentCode && item.investmentCode.includes(query));
+        return match;
+      });
     },
+
     async refreshAndMergePortfolio() {
       // 主动拉取所有数据
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
@@ -391,10 +432,13 @@ export default {
       // 再次根据当前搜索词过滤
       this.filterPortfolio();
     },
-    mergePortfolioItems(items) {
+// withDate: 是否把日期加到合并key中
+    mergePortfolioItems(items, withDate = false) {
       const map = {};
       items.forEach(item => {
-        const key = `${item.investmentName}_${item.investmentCode}_${item.investmentType}`;
+        const key = withDate
+            ? `${item.investmentName}_${item.investmentCode}_${item.investmentType}_${item.investmentDate}`
+            : `${item.investmentName}_${item.investmentCode}_${item.investmentType}`;
         if (map[key]) {
           map[key].investmentAmount += Number(item.investmentAmount);
         } else {
@@ -405,7 +449,9 @@ export default {
         }
       });
       return Object.values(map);
-    },
+    }
+,
+
 
     filterPortfolio() {
       if (!this.searchQuery) {
@@ -813,6 +859,44 @@ export default {
 </script>
 
 <style scoped>
+.sell-btn {
+  background: linear-gradient(90deg,#2196f3,#1769aa);
+  border: none;
+  color: #fff;
+  border-radius: 24px;
+  padding: 7px 16px 7px 10px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background .2s;
+  box-shadow: 0 1px 6px rgba(33,150,243,0.09);
+}
+.sell-btn:hover {
+  background: linear-gradient(90deg,#1976d2,#0d47a1);
+}
+
+
+.date-picker {
+  width: 120px;
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e7ef;
+  background: #f7faff;
+  outline: none;
+  margin-left: 12px;
+  margin-right: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.date-picker:focus {
+  border-color: #6ea8fe;
+  background: #fff;
+}
+
 
 .suggestion-list {
   position: absolute;
@@ -1013,6 +1097,7 @@ h2 {
   gap: 10px;
   margin: 14px 0 18px 0;
 }
+
 
 .search-bar input {
   flex: 1;
