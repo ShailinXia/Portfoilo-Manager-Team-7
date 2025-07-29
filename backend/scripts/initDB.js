@@ -5,6 +5,7 @@ const SCHEMAS = [
   `CREATE TABLE IF NOT EXISTS stocks (
     code TEXT PRIMARY KEY,
     name TEXT,
+    type TEXT,
     latest_price REAL,
     market_cap TEXT,
     turnover_rate REAL,
@@ -24,9 +25,9 @@ const SCHEMAS = [
   )`,
 
   `CREATE TABLE IF NOT EXISTS funds (
-    fund_code TEXT PRIMARY KEY,
-    short_name TEXT,
-    fund_type TEXT,
+    code TEXT PRIMARY KEY,
+    name TEXT,
+    type TEXT,
     fund_size TEXT,
     industries TEXT,
     managers TEXT,
@@ -35,11 +36,11 @@ const SCHEMAS = [
 
   `CREATE TABLE IF NOT EXISTS fund_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fund_code TEXT,
+    code TEXT,
     date TEXT,
     net_value REAL,
     change_percent REAL,
-    FOREIGN KEY(fund_code) REFERENCES funds(fund_code)
+    FOREIGN KEY(code) REFERENCES funds(code)
   )`,
 
   `CREATE TABLE IF NOT EXISTS userInfo (
@@ -62,12 +63,13 @@ const FIELD_MAPS = {
     '总市值': 'market_cap',
     '换手率': 'turnover_rate',
     '市盈率': 'pe_ratio',
-    '市净率': 'pb_ratio'
+    '市净率': 'pb_ratio',
+    '类型': 'type'
   },
   funds: {
-    '基金代码': 'fund_code',
-    '基金简称': 'short_name',
-    '基金类型': 'fund_type',
+    '基金代码': 'code',
+    '基金简称': 'name',
+    '基金类型': 'type',
     '基金规模': 'fund_size',
     '重仓行业': 'industries',
     '基金经理': 'managers',

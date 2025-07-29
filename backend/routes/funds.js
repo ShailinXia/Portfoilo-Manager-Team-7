@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
   const params = [];
 
   if (type) {
-    sql += ' WHERE fund_type = ?';
+    sql += ' WHERE type = ?';
     params.push(type);
   }
 
@@ -23,8 +23,8 @@ router.get('/', (req, res) => {
   // 动态计算涨跌幅
   const fundsWithChange = funds.map(fund => {
     const prev = db.prepare(
-      'SELECT net_value FROM fund_history WHERE fund_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
-    ).get(fund.fund_code);
+      'SELECT net_value FROM fund_history WHERE code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
+    ).get(fund.code);
     let change_percent = null;
     if (prev && prev.net_value) {
       change_percent = Number(((fund.latest_net_value - prev.net_value) / prev.net_value * 100).toFixed(2));
@@ -50,14 +50,25 @@ router.get('/', (req, res) => {
   res.json(fundsWithChange);
 });
 
+
+// 获取全部基金列表
+router.get('/all', (req, res) => {
+  const funds = db.prepare('SELECT * FROM funds').all();
+  if (funds.length > 0) {
+    res.json(funds);
+  } else {
+    res.status(404).json({ message: '没有找到基金信息' });
+  }
+});
+
 // 获取单只基金详情（动态计算涨跌幅）
 router.get('/:code', (req, res) => {
   const { code } = req.params;
-  const fund = db.prepare('SELECT * FROM funds WHERE fund_code = ?').get(code);
+  const fund = db.prepare('SELECT * FROM funds WHERE code = ?').get(code);
   if (!fund) return res.status(404).json({ error: '未找到该基金' });
 
   const prev = db.prepare(
-    'SELECT net_value FROM fund_history WHERE fund_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
+    'SELECT net_value FROM fund_history WHERE code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
   ).get(code);
 
   let change_percent = null;
@@ -71,11 +82,11 @@ router.get('/:code', (req, res) => {
 // 获取基金简要信息（代码、简称、最新净值、涨跌幅）
 router.get('/:code/brief', (req, res) => {
   const { code } = req.params;
-  const fund = db.prepare('SELECT fund_code, short_name, latest_net_value FROM funds WHERE fund_code = ?').get(code);
+  const fund = db.prepare('SELECT code, short_name, latest_net_value FROM funds WHERE code = ?').get(code);
   if (!fund) return res.status(404).json({ error: '未找到该基金' });
 
   const prev = db.prepare(
-    'SELECT net_value FROM fund_history WHERE fund_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
+    'SELECT net_value FROM fund_history WHERE code = ? ORDER BY date DESC LIMIT 1 OFFSET 1'
   ).get(code);
 
   let change_percent = null;
@@ -94,7 +105,7 @@ router.get('/:code/history', (req, res) => {
   let sql = `
     SELECT date, net_value
     FROM fund_history
-    WHERE fund_code = ?
+    WHERE code = ?
   `;
   const params = [code];
 
