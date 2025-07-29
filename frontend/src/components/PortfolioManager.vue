@@ -1509,19 +1509,30 @@ h2 {
 }
 
 /*.add-investment {*/
-/*  max-width: 430px;*/
-/*  margin: 0 auto;*/
+/*  background: #fff;*/
+/*  border-radius: 16px;*/
+/*  padding: 28px 30px 26px 30px;*/
+/*  box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);*/
+/*  margin-bottom: 28px;*/
+/*  transition: box-shadow 0.18s, transform 0.18s;*/
+/*  width: 100%;*/
+/*  min-width: 240px; !* 最小宽度，防止太窄 *!*/
+/*  max-width: 520px; !* 最大宽度，防止太宽 *!*/
+/*  margin-left: auto;*/
+/*  margin-right: auto;*/
+/*  box-sizing: border-box;*/
 /*}*/
 
 .add-investment form {
-  max-width: 480px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
+  min-width: 0;         /* 允许收缩 */
   box-sizing: border-box;
+  font-size: 16px;
 }
 
 </style>
