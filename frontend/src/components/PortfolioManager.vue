@@ -275,12 +275,12 @@ export default {
       chartError: null,
 
       stocksList: [],
-      selectedStockCode: '',
-      selectedStockName: '',
+      selectedStockCode: '000001',
+      selectedStockName: '平安银行',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
       // selectedStockCode: '000001',
-      stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
+      // stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
       echartsInstance: null,
       // chartLoading: false,
       // chartError: null,

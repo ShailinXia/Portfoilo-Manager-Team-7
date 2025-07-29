@@ -5,12 +5,12 @@ const router = express.Router();
 // 获取所有股票列表，支持分页、按市值/涨跌幅排序
 router.get("/", (req, res) => {
   const {
-    // page = 1,
-    // limit = 50,
+    page = req.query.page || 1,
+    pageSize = req.query.pageSize || 15,
     sort = "market_cap",
     order = "desc",
   } = req.query;
-  // const offset = (page - 1) * limit;
+  const offset = (page - 1) * pageSize;
 
   // // 只允许特定字段排序
   const allowedSort = ["market_cap", "change_percent"];
@@ -19,8 +19,8 @@ router.get("/", (req, res) => {
 
   // 查询所有股票
   const stocks = db
-    .prepare(`SELECT * FROM stocks ORDER BY ${sortField} ${sortOrder}`)
-    .all();
+    .prepare(`SELECT * FROM stocks ORDER BY ${sortField} ${sortOrder} LIMIT ? OFFSET ?`)
+    .all(pageSize, offset);
 
   // 动态计算涨跌幅
   const stocksWithChange = stocks.map((stock) => {
