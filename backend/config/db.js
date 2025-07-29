@@ -1,5 +1,5 @@
 const Database = require('better-sqlite3');
-const db = new Database('../../dummy.db', {
+const db = new Database('./db/dummy.db', {
     timeout: 5000 // 5秒超时
 });
 
