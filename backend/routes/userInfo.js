@@ -9,7 +9,7 @@ router.get("/", (req, res) => {
     return res.status(400).json({ message: "用户名不能为空" });
   }
 
-// 查询用户信息
+  // 查询用户信息
   const userInfo = db
     .prepare("SELECT * FROM userInfo WHERE username = ?")
     // .get(username);
@@ -39,8 +39,22 @@ router.post("/", (req, res) => {
 
   // 验证每个对象的字段
   for (const item of dataArray) {
-    const { username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount } = item;
-    if (!username || !investmentType || !investmentName || !investmentCode || !investmentDate || !investmentAmount) {
+    const {
+      username,
+      investmentType,
+      investmentName,
+      investmentCode,
+      investmentDate,
+      investmentAmount,
+    } = item;
+    if (
+      !username ||
+      !investmentType ||
+      !investmentName ||
+      !investmentCode ||
+      !investmentDate ||
+      !investmentAmount
+    ) {
       return res.status(400).json({
         message:
           "每个对象必须包含 username, investmentType, investmentName, investmentCode, investmentDate 和 investmentAmount",
@@ -55,7 +69,14 @@ router.post("/", (req, res) => {
   // 使用事务批量插入
   const insertMany = db.transaction((users) => {
     for (const user of users) {
-      insertUser.run(user.username, user.investmentType, user.investmentName, user.investmentCode, user.investmentDate, user.investmentAmount);
+      insertUser.run(
+        user.username,
+        user.investmentType,
+        user.investmentName,
+        user.investmentCode,
+        user.investmentDate,
+        user.investmentAmount
+      );
     }
   });
 
@@ -79,7 +100,7 @@ router.put("/", (req, res) => {
   // 更新用户信息
   const updateUser = db
     .prepare(
-      "UPDATE userInfo SET investment_type = ?, investment_amount = ? WHERE username = ?"
+      "UPDATE userInfo SET investmentType = ?, investmentAmount = ? WHERE username = ?"
     )
     .run(investmentType, investmentAmount, username);
   if (updateUser.changes > 0) {
@@ -126,6 +147,16 @@ router.get("/portfolio", (req, res) => {
     res.json(portfolio);
   } else {
     res.status(404).json({ message: "用户投资组合未找到" });
+  }
+});
+
+// 获取所有股票信息
+router.get("/all", (req, res) => {
+  const stocks = db.prepare("SELECT * FROM stocks").all();
+  if (stocks.length > 0) {
+    res.json(stocks);
+  } else {
+    res.status(404).json({ message: "没有找到股票信息" });
   }
 });
 

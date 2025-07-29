@@ -6,4 +6,8 @@ log/
 server.js
 **/.vscode/
 structure.txt
+images/
+*.http
 dummydata/
+*.db-journal
+*.db

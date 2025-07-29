@@ -56,6 +56,15 @@ router.get("/", (req, res) => {
   res.json(stocksWithChange);
 });
 
+// 获取全部股票列表信息
+router.get("/all", (req, res) => {
+  const stocks = db.prepare("SELECT * FROM stocks").all();
+  if (stocks.length === 0) {
+    return res.status(404).json({ error: "未找到股票信息" });
+  }
+  res.json(stocks);
+});
+
 // NOTE:静态路由优先于动态路由，动态路由放在最后
 // 获取所有股票名称
 router.get("/names", (req, res) => {
