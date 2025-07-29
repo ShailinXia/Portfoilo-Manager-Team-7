@@ -6,7 +6,8 @@
     <div v-if="error" class="error">{{ error }}</div>
 
     <div class="search-bar">
-      <input type="text" v-model="searchQuery" placeholder="搜索股票名称或代码..." @input="filterStocks" />
+      <input type="text" v-model="searchQuery" placeholder="搜索股票名称或代码..." @input="filterStocks"
+        @focus="clearJumpPage" />
     </div>
 
     <div class="stock-grid">
@@ -72,26 +73,40 @@ export default {
       currentPage: 1,
       pageSize: 15,
       totalItems: 5422,
+      totalPages: 0,
       pagedStocks: [], // 当前页显示的股票（由后端返回）
       searchQuery: '',
       loading: false,
       error: null,
       jumpPage: null, // 跳转页码输入
+      isFiltering: false,
+      filteredStocks: [],
     };
   },
   watch: {
     searchQuery() {
       this.currentPage = 1;
-      this.fetchStocks();
+      this.filterStocks(); // 使用 filterStocks 替代 fetchStocks
     },
     currentPage() {
-      this.fetchStocks();
-    }
+      if (this.isFiltering) {
+        this.applyPagination();
+      } else {
+        this.fetchStocks();
+      }
+    },
+    // currentPage() {
+    //   this.fetchStocks();
+    // }
   },
   async created() {
     await this.fetchStocks();
+    this.applyPagination();
   },
   methods: {
+    clearJumpPage() {
+      this.jumpPage = null;
+    },
     async fetchStocks() {
       this.loading = true;
       this.error = null;
@@ -113,21 +128,71 @@ export default {
       }
     },
 
+    async filterStocks() {
+      const keyword = this.searchQuery.trim();
+
+      if (!keyword) {
+        this.isFiltering = false;
+        await this.fetchStocks();  // 恢复默认分页数据
+        return;
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await axios.get('http://localhost:3000/api/stocks/searchAll', {
+          params: { keyword }
+        });
+
+        
+        this.filteredStocks = response.data;
+        this.totalItems = this.filteredStocks.length;
+        this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+        this.isFiltering = true;
+        this.jumpPage = null;
+        this.currentPage = 1;
+        this.applyPagination(); // 在前端分页切片
+      } catch (error) {
+        this.error = '搜索失败，请检查网络或稍后再试';
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async applyPagination() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+
+      if (this.isFiltering) {
+        this.pagedStocks = this.filteredStocks.slice(start, end);
+      }
+    },
+
     prevPage() {
       if (this.currentPage > 1) {
+        this.clearJumpPage();
         this.currentPage--;
       }
     },
 
     nextPage() {
-      if (this.currentPage < totalPages) {
+      if (this.currentPage < this.totalPages) {
+        this.clearJumpPage();
         this.currentPage++;
       }
     },
+
     // 跳转到指定页码
     goToPage() {
       if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
         this.currentPage = this.jumpPage;
+        this.clearJumpPage();
+
+        if (this.isFiltering) {
+          this.applyPagination();
+        }
       } else {
         alert(`请输入 1 到 ${this.totalPages} 之间的页码`);
       }

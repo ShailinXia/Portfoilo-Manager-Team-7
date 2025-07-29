@@ -44,9 +44,6 @@ const router = useRouter();
 const handleLogin = async () => {
   error.value = '';
 
-const handleLogin = async () => {
-  error.value = '';
-
   // 1. 测试超级账号快速通过
   if (username.value === 'admin' && password.value === '123456') {
     localStorage.setItem('isAuthenticated', 'true');

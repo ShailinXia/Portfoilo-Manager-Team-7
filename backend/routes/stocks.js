@@ -19,7 +19,9 @@ router.get("/", (req, res) => {
 
   // 查询所有股票
   const stocks = db
-    .prepare(`SELECT * FROM stocks ORDER BY ${sortField} ${sortOrder} LIMIT ? OFFSET ?`)
+    .prepare(
+      `SELECT * FROM stocks ORDER BY ${sortField} ${sortOrder} LIMIT ? OFFSET ?`
+    )
     .all(pageSize, offset);
 
   // 动态计算涨跌幅
@@ -54,6 +56,38 @@ router.get("/", (req, res) => {
   });
 
   res.json(stocksWithChange);
+});
+
+router.get("/searchAll", (req, res) => {
+  const { keyword } = req.query;
+  if (!keyword) {
+    return res.status(400).json({ message: "请输入搜索内容" });
+  }
+
+  // 模拟数据库中的数据（建议你用数据库查询）
+  const stocks = db
+    .prepare(`SELECT * FROM stocks WHERE name LIKE ? OR code LIKE ?`)
+    .all(`%${keyword}%`, `${keyword}`); // 示例用 SQLite
+
+  // 动态计算涨跌幅
+  const stocksWithChange = stocks.map((stock) => {
+    const prev = db
+      .prepare(
+        "SELECT price FROM stock_history WHERE stock_code = ? ORDER BY date DESC LIMIT 1 OFFSET 1"
+      )
+      .get(stock.code);
+    let change_percent = null;
+    if (prev && prev.price) {
+      change_percent = Number(
+        (((stock.latest_price - prev.price) / prev.price) * 100).toFixed(2)
+      );
+    }
+    return { ...stock, change_percent };
+  });
+
+  res.json(stocksWithChange);
+
+  // res.json(result); // 返回所有匹配项，由前端分页
 });
 
 // 获取全部股票列表信息
