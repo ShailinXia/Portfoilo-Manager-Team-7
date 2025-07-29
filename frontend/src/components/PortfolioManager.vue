@@ -1,7 +1,7 @@
 <template>
   <div class="portfolio-manager">
     <div class="header">
-      <h1>投资组合管理</h1>
+      <h1>投资组合管理 Portfolio Management</h1>
       <div class="portfolio-summary">
         <div class="summary-card">
           <h3>总价值</h3>
@@ -88,18 +88,14 @@
                   placeholder="请输入并选择..."
               />
               <ul v-if="nameSuggestions.length" class="suggestion-list">
-                <li v-for="item in nameSuggestions" :key="item.fund_code || item.code"
-                    @mousedown.prevent="selectSuggestion(item)">
-                  <!-- 股票显示 name/code，基金显示 short_name/fund_code -->
-                  <template v-if="newInvestment.type === 'stock'">
-                    {{ item.name }} ({{ item.code }})
-                  </template>
-                  <template v-else>
-                    {{ item.short_name }} ({{ item.fund_code }})
-                  </template>
+                <li
+                    v-for="item in nameSuggestions"
+                    :key="item.code"
+                    @click="selectSuggestion(item)">
+                  {{ item.name }} ({{ item.code }})
                 </li>
-
               </ul>
+
             </div>
             <div class="form-group">
               <label for="investment-symbol">代码</label>
@@ -425,15 +421,24 @@ export default {
     },
 
     async fetchStocks() {
-      const res = await fetch('http://localhost:3000/api/stocks/');
-      this.allStocks = await res.json();
+      const res = await fetch('http://localhost:3000/api/stocks/all');
+      // 保证 allStocks 里的 type 统一为 'stock'
+      this.allStocks = (await res.json()).map(item => ({
+        ...item,
+        type: 'stock'
+      }));cd
     },
     async fetchFunds() {
-      const res = await fetch('http://localhost:3000/api/funds/');
-      this.allFunds = await res.json();
-      console.log("基金列表：", this.allFunds); // 加这个看有无数据
-
+      const res = await fetch('http://localhost:3000/api/funds/all');
+      // 保证 allFunds 里的 type 统一为 'fund'
+      this.allFunds = (await res.json()).map(item => ({
+        ...item,
+        type: 'fund'
+      }));
+      console.log("基金列表：", this.allFunds);
     },
+
+
     onNameInput(e) {
       const val = e.target.value.trim();
       let list = this.newInvestment.type === 'stock' ? this.allStocks : this.allFunds;
@@ -441,32 +446,31 @@ export default {
         this.nameSuggestions = [];
         return;
       }
-      if (this.newInvestment.type === 'stock') {
-        this.nameSuggestions = list.filter(item =>
-            (item.name && item.name.includes(val)) ||
-            (item.code && item.code.includes(val))
-        ).slice(0, 50);
-      } else {
-        // 基金用 short_name 和 fund_code
-        this.nameSuggestions = list.filter(item =>
-            (item.short_name && item.short_name.includes(val)) ||
-            (item.fund_code && item.fund_code.includes(val))
-        ).slice(0, 50);
-      }
+      this.nameSuggestions = list.filter(item =>
+          (item.name && item.name.includes(val)) ||
+          (item.code && item.code.includes(val))
+      );
     },
-    // 用户选中建议后填充
     selectSuggestion(item) {
-      if (this.newInvestment.type === 'stock') {
-        this.newInvestment.name = item.name;
-        this.newInvestment.symbol = item.code;
-      } else {
-        // 基金
-        this.newInvestment.name = item.short_name;
-        this.newInvestment.symbol = item.fund_code;
-      }
+      this.newInvestment.name = item.name;
+      this.newInvestment.symbol = item.code;
       this.nameSuggestions = [];
-    }
-    ,
+      this.$refs['investment-name']?.blur?.();
+    },
+
+    // // 用户选中建议后填充
+    // selectSuggestion(item) {
+    //   if (this.newInvestment.type === 'stock') {
+    //     this.newInvestment.name = item.name;
+    //     this.newInvestment.symbol = item.code;
+    //   } else {
+    //     // 基金
+    //     this.newInvestment.name = item.short_name;
+    //     this.newInvestment.symbol = item.fund_code;
+    //   }
+    //   this.nameSuggestions = [];
+    // },
+
     async addInvestment() {
       // 这里建议参数补全校验
       const postBody = {
