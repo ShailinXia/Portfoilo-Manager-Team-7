@@ -71,7 +71,7 @@ export default {
       this.error = null;
       try {
         //TODO: Adjust the URL to match your backend API endpoint
-        const response = await axios.get('http://localhost:8080/api/stocks');
+        const response = await axios.get('http://localhost:3000/api/stocks');
         this.stocks = response.data;
         this.filteredStocks = [...this.stocks];
       } catch (err) {

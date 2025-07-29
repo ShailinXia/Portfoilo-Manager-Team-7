@@ -60,7 +60,6 @@
             <div class="form-group">
               <label for="investment-type">投资类型</label>
               <select id="investment-type" v-model="newInvestment.type" required>
-<!--                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>-->
                 <option v-for="t in investmentTypes" :value="t.value" :key="t.value">{{ t.label }}</option>
               </select>
             </div>
@@ -92,7 +91,6 @@
                   placeholder="自动填充"
               />
             </div>
-            <!-- 其它表单同原来 -->
             <div class="form-group">
               <label for="investment-amount">投资金额</label>
               <input
@@ -119,56 +117,38 @@
       </div>
       <!-- 右侧 -->
       <div class="right-panel">
-        <!--        <div class="card performance-chart">-->
-        <!--          <h2>股票历史数据 (代码: 000001)</h2>-->
-        <!--          <div v-if="chartError" class="error">{{ chartError }}</div>-->
-        <!--          <div class="chart-wrapper">-->
-        <!--            <canvas ref="stockChartCanvas"></canvas>-->
-        <!--          </div>-->
-        <!--          <div class="controls-container">-->
-        <!--            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">-->
-        <!--              {{ chartLoading ? '加载中...' : '刷新数据' }}-->
-        <!--            </button>-->
-        <!--            <div class="date-range-container">-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>开始日期: </label>-->
-        <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>结束日期: </label>-->
-        <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--          </div>-->
-        <!--        </div>-->
         <div class="card performance-chart">
-          <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
-
-            <select
+            
+            <div class="stock-code-input">
+              <input
+                type="text"
                 v-model="selectedStockCode"
-                @change="fetchStockData"
-                class="custom-select"
-            >
-              <option v-for="code in stockCodes" :value="code" :key="code">{{ code }}</option>
-            </select>
+                @input="validateStockCode"
+                placeholder="输入股票代码(6位)"
+                maxlength="6"
+                class="custom-input"
+              />
+              <span v-if="stockCodeError" class="error-text">{{ stockCodeError }}</span>
+            </div>
           </div>
           <div v-if="chartError" class="error">{{ chartError }}</div>
           <div ref="echartsContainer" class="chart-wrapper" style="height:350px;width:100%"></div>
           <div class="controls-container">
-            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">
+            <button @click="fetchStockData" :disabled="chartLoading || stockCodeError" class="refresh-btn">
               {{ chartLoading ? '加载中...' : '刷新数据' }}
             </button>
-            <!--            <div class="date-range-container">-->
-            <!--              <div class="date-input-group">-->
-            <!--                <label>开始日期: </label>-->
-            <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
-            <!--              </div>-->
-            <!--              <div class="date-input-group">-->
-            <!--                <label>结束日期: </label>-->
-            <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
-            <!--              </div>-->
-            <!--            </div>-->
+            <div class="date-range-container">
+              <div class="date-input-group">
+                <label>开始日期: </label>
+                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>
+              </div>
+              <div class="date-input-group">
+                <label>结束日期: </label>
+                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -196,8 +176,8 @@
 
 <script>
 import {Chart, registerables} from 'chart.js';
-import * as echarts from 'echarts';  // 新增
-import axios from 'axios';            // 新增
+import * as echarts from 'echarts';
+import axios from 'axios';
 
 Chart.register(...registerables);
 
@@ -262,26 +242,15 @@ export default {
       allocationChart: null,
 
       // 股票图表相关数据
-      chartInstance: null,
-      chartHistory: [],
-      chartStartDate: '',
-      chartEndDate: '',
+      selectedStockCode: '000001',
+      stockCodeError: '',
+      chartStartDate: '2025-01-01',
+      chartEndDate: '2025-07-25',
       chartLoading: false,
       chartError: null,
-
-      stocksList: [],
-      selectedStockCode: '000001',
-      selectedStockName: '',
-      stockSearchInput: '',  // 用户输入
-      stockSearchOptions: [],
-      // selectedStockCode: '000001',
-      stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
       echartsInstance: null,
-      // chartLoading: false,
-      // chartError: null,
-      // chartStartDate: '',
-      // chartEndDate: '',
-      originStockData: []
+      originStockData: [],
+      stocksList: []
     };
   },
   computed: {
@@ -296,21 +265,13 @@ export default {
       return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
     },
     dailyChange() {
-      // 模拟每日涨跌 - 实际应用中应从API获取
       return (Math.random() * 200 - 100).toFixed(2);
     },
     dailyChangePercentage() {
       const dailyChangeValue = parseFloat(this.dailyChange);
       return dailyChangeValue !== 0 ? ((dailyChangeValue / this.totalValue) * 100).toFixed(2) : 0;
-    },
-    dailyChangeClass() {
-      return {
-        positive: this.dailyChange >= 0,
-        negative: this.dailyChange < 0
-      }
     }
   },
-
   mounted() {
     this.filteredItems = [...this.portfolioItems];
     this.initAllocationChart();
@@ -324,7 +285,6 @@ export default {
     this.destroyEcharts();
     window.removeEventListener('resize', this.resizeEcharts);
   },
-
   watch: {
     selectedStockCode: 'fetchStockData',
     chartStartDate: 'fetchStockData',
@@ -337,15 +297,32 @@ export default {
         } else if (val === 'fund') {
           this.fetchFunds();
         }
-        // 清空输入
         this.newInvestment.name = '';
         this.newInvestment.symbol = '';
         this.nameSuggestions = [];
       }
     }
   },
-
   methods: {
+    validateStockCode() {
+      if (!this.selectedStockCode) {
+        this.stockCodeError = '请输入股票代码';
+        return;
+      }
+      
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.stockCodeError = '股票代码必须是6位数字';
+        return;
+      }
+      
+      const codeNum = parseInt(this.selectedStockCode);
+      if (codeNum < 1 || codeNum > 999999) {
+        this.stockCodeError = '股票代码必须在000001-999999之间';
+        return;
+      }
+      
+      this.stockCodeError = '';
+    },
     formatCurrency(value) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -365,11 +342,11 @@ export default {
       );
     },
     async fetchStocks() {
-      const res = await fetch('http://localhost:8080/api/stocks');
+      const res = await fetch('http://localhost:3000/api/stocks');
       this.allStocks = await res.json();
     },
     async fetchFunds() {
-      const res = await fetch('http://localhost:8080/api/funds');
+      const res = await fetch('http://localhost:3000/api/funds');
       this.allFunds = await res.json();
     },
     onNameInput(e) {
@@ -379,27 +356,19 @@ export default {
         this.nameSuggestions = [];
         return;
       }
-      // 中文名/拼音/简拼/代码都可模糊
       this.nameSuggestions = list.filter(item =>
           item.name.includes(val) ||
           (item.code && item.code.includes(val))
-      ).slice(0, 10); // 最多展示10条
+      ).slice(0, 10);
     },
-    // 用户选中建议后填充
     selectSuggestion(item) {
       this.newInvestment.name = item.name;
       this.newInvestment.symbol = item.code;
       this.nameSuggestions = [];
     },
     async addInvestment() {
-      // 这里建议参数补全校验
       const postBody = {
-        // name: this.newInvestment.name,
-        // code: this.newInvestment.symbol,
-        // type: this.newInvestment.type,
-        // amount: this.newInvestment.amount,
-        // purchaseDate: this.newInvestment.purchaseDate
-        username: "Allen",                                 // 新增，数据库要求
+        username: "Allen",
         investmentType: this.newInvestment.type,
         investmentName: this.newInvestment.name,
         investmentCode: this.newInvestment.symbol,
@@ -412,11 +381,9 @@ export default {
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(postBody)
         });
-        // 这里根据后端实际返回格式调整，通常是 {success: true/false, ...}
         const result = await resp.json();
         if (result.success) {
           alert("添加投资项目成功！");
-          // 清空表单（如有需要）
           this.newInvestment = {
             type: 'stock',
             name: '',
@@ -424,7 +391,6 @@ export default {
             amount: '',
             purchaseDate: new Date().toISOString().split('T')[0]
           };
-          // 可以刷新投资组合列表
           this.filterPortfolio && this.filterPortfolio();
         } else {
           alert("添加有误：" + (result.message || "请检查数据"));
@@ -433,54 +399,6 @@ export default {
         alert("添加有误：" + err.message);
       }
     },
-
-    // addInvestment() {
-    //   // 在实际应用中，这里会有API调用
-    //   const newId = this.portfolioItems.length > 0
-    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-    //       : 1;
-    //
-    //   // 模拟计算当前价值和收益
-    //   this.filteredItems = this.portfolioItems.filter(item =>
-    //       item.name.toLowerCase().includes(query) ||
-    //       item.symbol.toLowerCase().includes(query) ||
-    //       item.type.toLowerCase().includes(query)
-    //   );
-    // },
-    //
-    // addInvestment() {
-    //   const newId = this.portfolioItems.length > 0
-    //       ? Math.max(...this.portfolioItems.map(item => item.id)) + 1
-    //       : 1;
-    //
-    //   const currentValue = this.newInvestment.amount * (1 + (Math.random() * 0.5 - 0.1));
-    //   const profit = currentValue - this.newInvestment.amount;
-    //   const profitPercentage = (profit / this.newInvestment.amount) * 100;
-    //   const newItem = {
-    //     id: newId,
-    //     name: this.newInvestment.name,
-    //     symbol: this.newInvestment.symbol.toUpperCase(),
-    //     type: this.newInvestment.type,
-    //     amount: parseFloat(this.newInvestment.amount),
-    //     purchaseDate: this.newInvestment.purchaseDate,
-    //     currentValue: parseFloat(currentValue.toFixed(2)),
-    //     profit: parseFloat(profit.toFixed(2)),
-    //     profitPercentage: parseFloat(profitPercentage.toFixed(2))
-    //   };
-    //
-    //   this.portfolioItems.push(newItem);
-    //   this.filterPortfolio();
-    //   this.updateAllocationChart();
-    //
-    //   this.newInvestment = {
-    //     type: 'stock',
-    //     name: '',
-    //     symbol: '',
-    //     amount: 0,
-    //     purchaseDate: new Date().toISOString().split('T')[0]
-    //   };
-    // },
-
     confirmDelete(item) {
       this.itemToDelete = item;
       this.showDeleteModal = true;
@@ -492,132 +410,6 @@ export default {
       this.itemToDelete = null;
       this.updateAllocationChart();
     },
-
-    // // 股票图表相关方法
-    // processStockData(data) {
-    //   if (!data || data.length === 0) return [];
-    //
-    //   const grouped = {};
-    //
-    //   data.forEach(item => {
-    //     if (!grouped[item.date]) {
-    //       grouped[item.date] = {
-    //         prices: [],
-    //         date: item.date
-    //       };
-    //     }
-    //     grouped[item.date].prices.push(item.price);
-    //   });
-    //
-    //   return Object.values(grouped).map(day => ({
-    //     date: day.date,
-    //     avgPrice: day.prices.reduce((sum, price) => sum + price, 0) / day.prices.length,
-    //     minPrice: Math.min(...day.prices),
-    //     maxPrice: Math.max(...day.prices)
-    //   }));
-    // },
-    // destroyChart() {
-    //   if (this.chartInstance) {
-    //     this.chartInstance.destroy();
-    //     this.chartInstance = null;
-    //   }
-    // },
-    // async fetchStockData() {
-    //   try {
-    //     this.chartLoading = true;
-    //     this.chartError = null;
-    //
-    //     const response = await fetch(
-    //         `http://localhost:3000/api/stocks/000001/history?start=${this.chartStartDate}&end=${this.chartEndDate}`
-    //     );
-    //
-    //     if (!response.ok) {
-    //       throw new Error(`获取数据失败: ${response.status}`);
-    //     }
-    //
-    //     const data = await response.json();
-    //
-    //     this.destroyChart();
-    //     this.chartHistory = this.processStockData(data);
-    //
-    //     if (!this.$refs.stockChartCanvas || this.chartHistory.length === 0) return;
-    //
-    //     const ctx = this.$refs.stockChartCanvas.getContext('2d');
-    //     if (!ctx) return;
-    //
-    //     this.chartInstance = new Chart(ctx, {
-    //       type: 'line',
-    //       data: {
-    //         labels: this.chartHistory.map(item => item.date),
-    //         datasets: [
-    //           {
-    //             label: '平均价格',
-    //             data: this.chartHistory.map(item => item.avgPrice),
-    //             borderColor: 'rgb(75, 192, 192)',
-    //             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-    //             tension: 0.1,
-    //             fill: true
-    //           },
-    //           {
-    //             label: '最低价格',
-    //             data: this.chartHistory.map(item => item.minPrice),
-    //             borderColor: 'rgb(255, 99, 132)',
-    //             backgroundColor: 'rgba(255, 99, 132, 0.2)',
-    //             borderDash: [5, 5],
-    //             tension: 0.1
-    //           },
-    //           {
-    //             label: '最高价格',
-    //             data: this.chartHistory.map(item => item.maxPrice),
-    //             borderColor: 'rgb(54, 162, 235)',
-    //             backgroundColor: 'rgba(54, 162, 235, 0.2)',
-    //             borderDash: [5, 5],
-    //             tension: 0.1
-    //           }
-    //         ]
-    //       },
-    //       options: {
-    //         responsive: true,
-    //         maintainAspectRatio: false,
-    //         plugins: {
-    //           title: {
-    //             display: true,
-    //             text: '股票价格走势'
-    //           },
-    //           tooltip: {
-    //             mode: 'index',
-    //             intersect: false
-    //           }
-    //         },
-    //         scales: {
-    //           y: {
-    //             beginAtZero: false,
-    //             title: {
-    //               display: true,
-    //               text: '价格 (元)'
-    //             }
-    //           },
-    //           x: {
-    //             title: {
-    //               display: true,
-    //               text: '日期'
-    //             }
-    //           }
-    //         },
-    //         interaction: {
-    //           mode: 'nearest',
-    //           axis: 'x',
-    //           intersect: false
-    //         }
-    //       }
-    //     });
-    //   } catch (err) {
-    //     this.chartError = '获取数据失败: ' + err.message;
-    //     console.error('获取数据时出错:', err);
-    //   } finally {
-    //     this.chartLoading = false;
-    //   }
-    // },
     initEcharts() {
       if (this.echartsInstance) return;
       this.echartsInstance = echarts.init(this.$refs.echartsContainer);
@@ -631,89 +423,47 @@ export default {
     resizeEcharts() {
       if (this.echartsInstance) this.echartsInstance.resize();
     },
-    calculateMA(dayCount, prices) {
-      const result = [];
-      for (let i = 0; i < prices.length; i++) {
-        if (i < dayCount - 1) {
-          result.push('-');
-          continue;
-        }
-        let sum = 0;
-        for (let j = 0; j < dayCount; j++) {
-          sum += prices[i - j];
-        }
-        result.push(sum / dayCount);
-      }
-      return result;
-    },
     async fetchStockList() {
       try {
-        const res = await axios.get('http://localhost:8080/api/stocks');
+        const res = await axios.get('http://localhost:3000/api/stocks');
         this.stocksList = res.data;
       } catch (err) {
         this.stocksList = [];
-        // 错误处理
       }
-    },
-    updateSelectedStockName() {
-      // 用 code 找到 name
-      const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
-      console.log(stock)
-      this.selectedStockName = stock ? stock.name : '';
-
-    },
-    // onSelectStock(code) {
-    //   this.selectedStockCode = code;
-    //   this.updateSelectedStockName();
-    //   // ...拉历史数据
-    //   this.fetchStockData();
-    // },
-    // 实时匹配输入的代码
-    onStockSearchInput() {
-      const keyword = this.stockSearchInput.trim();
-      if (!keyword) {
-        this.stockSearchOptions = [];
-        return;
-      }
-      // 支持模糊匹配代码或名称
-      this.stockSearchOptions = this.stocksList.filter(s =>
-          s.code.includes(keyword) || (s.name && s.name.includes(keyword))
-      );
-    },
-    // 选择候选
-    onSelectStock(item) {
-      this.selectedStockCode = item.code;
-      this.selectedStockName = item.name;
-      this.stockSearchInput = `${item.name} (${item.code})`;
-      this.stockSearchOptions = [];
-      this.fetchStockData(); // 拉取历史数据
     },
     async fetchStockData() {
-      this.chartLoading = true;
-      this.chartError = null;
-      if (!this.selectedStockCode) {
-        this.chartError = '请先选择股票代码';
-        this.chartLoading = false;
+      // 检查股票代码是否为六位数字
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.chartError = '请输入有效的六位股票代码';
         return;
       }
-      console.log('fetchStockData selectedStockCode:', this.selectedStockCode);
+
+      this.chartLoading = true;
+      this.chartError = null;
 
       try {
-        // 日期参数可选
-        let url = `http://localhost:8080/api/stocks/${this.selectedStockCode}/history`;
-        // let url = `http://localhost:8080/api/stocks/000001/history`;
-        const params = {};
-        if (this.chartStartDate) params.start = this.chartStartDate;
-        if (this.chartEndDate) params.end = this.chartEndDate;
+        let url = `http://localhost:3000/api/stocks/${this.selectedStockCode}/history`;
+        const params = {
+          start: this.chartStartDate || '2025-01-01',
+          end: this.chartEndDate || '2025-07-25'
+        };
+
         const response = await axios.get(url, {params});
         let rawData = response.data;
-        // 升序排序
+
+        // 如果返回的数据为空，则显示无历史数据
+        if (!rawData || rawData.length === 0) {
+          this.chartError = '无历史数据';
+          return;
+        }
+
+        // 处理数据
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
         this.originStockData = rawData;
         this.renderEcharts();
-        this.stockData = response.data; // 更新数据
       } catch (err) {
-        this.chartError = '股票历史数据加载失败';
+        this.chartError = '股票历史数据加载失败: ' + (err.response?.data?.message || err.message);
+        console.error('获取股票数据失败:', err);
       } finally {
         this.chartLoading = false;
       }
@@ -723,11 +473,12 @@ export default {
         this.chartError = '无历史数据';
         return;
       }
-      // x轴日期，y轴收盘价
+
       const dates = this.originStockData.map(d => d.date);
       const prices = this.originStockData.map(d => d.price);
       let min = Math.min(...prices);
       let max = Math.max(...prices);
+
       if (min === max) {
         min = min * 0.95;
         max = max * 1.05;
@@ -735,8 +486,10 @@ export default {
         min = min * 0.9;
         max = max * 1.1;
       }
+
       min = Math.floor(min * 100) / 100;
       max = Math.ceil(max * 100) / 100;
+
       const option = {
         tooltip: {
           trigger: 'axis',
@@ -745,9 +498,7 @@ export default {
           }
         },
         title: {
-          text: this.selectedStockName
-              ? `${this.selectedStockName} (${this.selectedStockCode})`
-              : `(${this.selectedStockCode})`,
+          text: `(${this.selectedStockCode})`,
           left: 'center'
         },
         toolbox: {
@@ -759,7 +510,6 @@ export default {
         },
         xAxis: {type: 'category', data: dates, boundaryGap: false},
         yAxis: {type: 'value', min, max, boundaryGap: [0, '100%']},
-
         dataZoom: [
           {
             type: 'inside',
@@ -793,8 +543,6 @@ export default {
 
       this.echartsInstance.setOption(option, true);
     },
-
-    // 资产分配图表相关方法
     initAllocationChart() {
       const allocationCtx = this.$refs.allocationChart.getContext('2d');
       this.allocationChart = new Chart(allocationCtx, {
@@ -811,12 +559,6 @@ export default {
           }
         }
       });
-
-
-    },
-    updateCharts() {
-      this.performanceChart.data = this.getPerformanceChartData();
-      this.performanceChart.update();
     },
     updateAllocationChart() {
       this.allocationChart.data = this.getAllocationChartData();
@@ -850,13 +592,11 @@ export default {
         }]
       };
     }
-
   }
 };
 </script>
 
 <style scoped>
-
 .suggestion-list {
   position: absolute;
   background: #fff;
@@ -882,32 +622,38 @@ export default {
 
 .portfolio-manager {
   font-family: 'Arial', sans-serif;
-  /*max-width: 1200px;*/
   margin: 0 auto;
   padding: 20px;
   color: #333;
 }
 
-/* 可以放在你的全局样式文件或组件内style标签里 */
-.custom-select {
+.stock-code-input {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-input {
   height: 32px;
   font-size: 15px;
-  padding: 0 28px 0 12px;
+  padding: 0 12px;
   border: 1.5px solid #d9d9d9;
   border-radius: 8px;
-  background: #f8fafc url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23333' stroke-width='1.5'/%3E%3C/svg%3E%0A") no-repeat right 12px center/16px 10px;
   transition: border 0.2s;
   outline: none;
   color: #2c3e50;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
-.custom-select:focus {
+.custom-input:focus {
   border-color: #1677ff;
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
 }
 
+.error-text {
+  color: #ff0000;
+  font-size: 12px;
+  margin-top: 4px;
+}
 
 .header {
   margin-bottom: 30px;
@@ -970,49 +716,34 @@ export default {
   color: #e74c3c;
 }
 
-
 .content {
   display: flex;
   flex-direction: row;
   width: 100%;
-  /*height: 100vh;*/
   box-sizing: border-box;
   gap: 32px;
   padding: 5px 32px 0 32px;
   background: #f5f8fc;
 }
 
-/*.card {*/
-/*  background: #fff;*/
-/*  border-radius: 18px;*/
-/*  box-shadow: 0 2px 12px #e2eafc44;*/
-/*  padding: 24px 28px 28px 28px;*/
-/*  margin-bottom: 0;*/
-/*  display: flex;*/
-/*  flex-direction: column;*/
-/*  min-width: 0;*/
-/*}*/
-
 .left-panel, .right-panel {
   flex: 1 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px; /* 内部卡片间距，推荐加上 */
-  background: none; /* 父 panel 透明 */
+  gap: 24px;
+  background: none;
   box-shadow: none;
   padding: 0;
 }
 
-
 .portfolio-list, .add-investment, .performance-chart, .allocation-chart {
   background: #fff;
-  border-radius: 16px; /* 圆角加大，显得更有质感 */
-  padding: 28px 30px 26px 30px; /* 加大内边距，信息更舒展 */
+  border-radius: 16px;
+  padding: 28px 30px 26px 30px;
   box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);
   margin-bottom: 28px;
   transition: box-shadow 0.18s, transform 0.18s;
-  /* 卡片悬浮效果，可选： */
   will-change: box-shadow, transform;
 }
 
@@ -1024,18 +755,10 @@ export default {
   transform: translateY(-2px) scale(1.01);
 }
 
-/*.allocation-chart {*/
-/*  background: white;*/
-/*  border-radius: 8px;*/
-/*  padding: 20px;*/
-/*  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);*/
-/*  height: 350px;*/
-/*  margin-bottom: 20px;*/
-/*}*/
-/* 卡片内标题统一美化 */
 .portfolio-list h2,
 .add-investment h2,
-.performance-chart h2 {
+.performance-chart h2,
+.allocation-chart h2 {
   font-size: 22px;
   font-weight: 700;
   color: #29394d;
@@ -1158,19 +881,40 @@ h2 {
   background: #27ae60;
 }
 
-/* 股票图表样式 */
 .chart-wrapper {
   position: relative;
   height: 300px;
   margin: 20px 0;
 }
 
-/* 修复控制区域布局 */
 .controls-container {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 15px;
   margin-top: 15px;
+  align-items: center;
+}
+
+.date-range-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.date-input-group label {
+  white-space: nowrap;
+}
+
+.date-input-group input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .refresh-btn {
@@ -1194,33 +938,6 @@ h2 {
   background-color: #45a049;
 }
 
-.date-range-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-}
-
-.date-input-group {
-  flex: 1;
-  min-width: 150px;
-}
-
-.date-input-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: #555;
-}
-
-.date-input-group input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
 .error {
   color: #ff0000;
   background-color: #ffeeee;
@@ -1229,7 +946,6 @@ h2 {
   margin: 10px 0;
 }
 
-/* 资产分配图表样式 */
 .chart-container {
   position: relative;
   height: 270px;
@@ -1309,7 +1025,6 @@ h2 {
     padding: 14px 8px;
   }
 
-  /* 在小屏幕上优化日期范围布局 */
   .date-range-container {
     flex-direction: column;
     gap: 8px;
@@ -1327,7 +1042,8 @@ h2 {
 
   .portfolio-list h2,
   .add-investment h2,
-  .performance-chart, .allocation-chart, h2 {
+  .performance-chart h2,
+  .allocation-chart h2 {
     font-size: 18px;
     margin-bottom: 14px;
   }
