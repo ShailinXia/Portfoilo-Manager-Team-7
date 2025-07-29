@@ -106,7 +106,7 @@ export default {
       this.error = null;
       try {
         // 获取所有股票数据
-        const response = await axios.get('http://localhost:3000/api/stocks?exchange=ASHARE');
+        const response = await axios.get('http://localhost:3000/api/stocks?');
         this.allStocks = response.data;
         this.filteredStocks = [...this.allStocks];
         this.totalItems = this.filteredStocks.length;
