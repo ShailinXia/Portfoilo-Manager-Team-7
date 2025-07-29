@@ -41,14 +41,50 @@ const password = ref('');
 const error = ref('');
 const router = useRouter();
 
-const handleLogin = () => {
+// const handleLogin = () => {
+//   if (username.value === 'admin' && password.value === '123456') {
+//     localStorage.setItem('isAuthenticated', 'true');
+//     localStorage.setItem('isAuthenticated', 'true');
+//     emit('login-success'); // 通知父组件
+//   } else {
+//     error.value = '用户名或密码错误';
+//   }
+// };
+
+const handleLogin = async () => {
+  error.value = '';
+
+  // 1. 测试超级账号快速通过
   if (username.value === 'admin' && password.value === '123456') {
     localStorage.setItem('isAuthenticated', 'true');
-    emit('login-success'); // 通知父组件
-  } else {
-    error.value = '用户名或密码错误';
+    localStorage.setItem('currentUsername', 'admin');
+    emit('login-success');
+    return;
+  }
+
+  // 2. 其它用户走后端接口校验
+  try {
+    const resp = await fetch('http://localhost:3000/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: username.value,
+        password: password.value
+      })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('currentUsername', username.value);
+      emit('login-success');
+    } else {
+      error.value = result.message || '用户名或密码错误';
+    }
+  } catch (err) {
+    error.value = '登录失败: ' + err.message;
   }
 };
+
 
 </script>
 
