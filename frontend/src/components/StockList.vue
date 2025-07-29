@@ -43,23 +43,21 @@
         </div>
       </div>
     </div>
-    
+
     <div class="pagination-controls">
-      <button 
-        @click="prevPage"
-        :disabled="currentPage <= 1"
-        class="page-btn"
-      >上一页</button>
-      
+      <button @click="prevPage" :disabled="currentPage <= 1" class="page-btn">上一页</button>
+
       <span class="page-info">
         第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
       </span>
-      
-      <button 
-        @click="nextPage"
-        :disabled="currentPage >= totalPages"
-        class="page-btn"
-      >下一页</button>
+
+      <div class="jump-to-page">
+        <input type="number" v-model.number="jumpPage" min="1" :max="totalPages" @keydown.enter="goToPage"
+          placeholder="页码" />
+        <button @click="goToPage" class="page-btn">跳转</button>
+      </div>
+
+      <button @click="nextPage" :disabled="currentPage >= totalPages" class="page-btn">下一页</button>
     </div>
   </div>
 </template>
@@ -72,45 +70,41 @@ export default {
   data() {
     return {
       currentPage: 1,
-      pageSize: 9, // 每页显示9条
-      totalItems: 0,
-      allStocks: [],    // 存储所有股票数据
-      filteredStocks: [], // 存储过滤后的股票
-      pagedStocks: [],  // 存储当前页显示的股票
+      pageSize: 15,
+      totalItems: 5422,
+      pagedStocks: [], // 当前页显示的股票（由后端返回）
       searchQuery: '',
       loading: false,
       error: null,
+      jumpPage: null, // 跳转页码输入
     };
   },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.filteredStocks.length / this.pageSize);
-    }
-  },
   watch: {
-    // 当搜索词或页码变化时更新分页
     searchQuery() {
       this.currentPage = 1;
-      this.filterStocks();
+      this.fetchStocks();
     },
     currentPage() {
-      this.updatePagedStocks();
+      this.fetchStocks();
     }
   },
   async created() {
-    await this.fetchAllStocks();
+    await this.fetchStocks();
   },
   methods: {
-    async fetchAllStocks() {
+    async fetchStocks() {
       this.loading = true;
       this.error = null;
       try {
-        // 获取所有股票数据
-        const response = await axios.get('http://localhost:3000/api/stocks?exchange=ASHARE');
-        this.allStocks = response.data;
-        this.filteredStocks = [...this.allStocks];
-        this.totalItems = this.filteredStocks.length;
-        this.updatePagedStocks();
+        const params = {
+          page: this.currentPage,
+          pageSize: this.pageSize,
+        };
+        const response = await axios.get('http://localhost:3000/api/stocks', { params });
+
+        // 假设后端返回格式为：{ data: [...], total: 123 }
+        this.pagedStocks = response.data;
+        this.totalPages = Math.ceil(this.totalItems / this.pageSize);
       } catch (err) {
         console.error('获取股票数据失败:', err);
         this.error = '获取股票数据失败，请稍后重试';
@@ -118,36 +112,24 @@ export default {
         this.loading = false;
       }
     },
-    
-    filterStocks() {
-      if (!this.searchQuery) {
-        this.filteredStocks = [...this.allStocks];
-      } else {
-        const query = this.searchQuery.toLowerCase();
-        this.filteredStocks = this.allStocks.filter(stock => 
-          stock.name.toLowerCase().includes(query) || 
-          stock.code.toLowerCase().includes(query)
-        );
-      }
-      this.totalItems = this.filteredStocks.length;
-      this.updatePagedStocks();
-    },
-    
-    updatePagedStocks() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = start + this.pageSize;
-      this.pagedStocks = this.filteredStocks.slice(start, end);
-    },
-    
+
     prevPage() {
       if (this.currentPage > 1) {
         this.currentPage--;
       }
     },
-    
+
     nextPage() {
-      if (this.currentPage < this.totalPages) {
+      if (this.currentPage < totalPages) {
         this.currentPage++;
+      }
+    },
+    // 跳转到指定页码
+    goToPage() {
+      if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+        this.currentPage = this.jumpPage;
+      } else {
+        alert(`请输入 1 到 ${this.totalPages} 之间的页码`);
       }
     }
   }
@@ -194,30 +176,46 @@ h1 {
 }
 
 .pagination-controls {
-  margin: 20px 0;
   display: flex;
-  justify-content: center;
-  gap: 15px;
   align-items: center;
+  justify-content: center;
+  /* 居中对齐 */
+  gap: 10px;
+  flex-wrap: nowrap;
+  /* 不换行，防止“下一页”掉下来 */
+  margin-top: 20px;
 }
 
 .page-btn {
-  padding: 8px 20px;
-  border: 1px solid #2c3e50;
+  padding: 6px 12px;
+  background-color: #fff;
+  border: 1px solid #333;
   border-radius: 4px;
-  background: #fff;
   cursor: pointer;
-  transition: all 0.3s;
 }
 
 .page-btn:disabled {
-  opacity: 0.5;
+  color: #ccc;
+  border-color: #ccc;
   cursor: not-allowed;
 }
 
 .page-info {
-  color: #666;
-  font-size: 14px;
+  margin: 0 10px;
+}
+
+.jump-to-page {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.jump-to-page input {
+  width: 40px;
+  padding: 6px 12px;
+  flex-wrap: nowrap;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .stock-grid {

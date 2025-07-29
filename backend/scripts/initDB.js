@@ -1,5 +1,5 @@
-const db = require('../config/db');
-const { importXLSX } = require('../utils/importXlsx');
+const db = require("../config/db");
+const { importXLSX } = require("../utils/importXlsx");
 
 const SCHEMAS = [
   `CREATE TABLE IF NOT EXISTS stocks (
@@ -51,42 +51,48 @@ const SCHEMAS = [
     investmentCode TEXT,
     investmentDate DATE,
     investmentAmount REAL
-    )`
+    )`,
+
+  `CREATE TABLE IF NOT EXISTS userLogin (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+    )`,
 ];
 
 // 字段映射 (适配您的Excel)
 const FIELD_MAPS = {
   stocks: {
-    '代码': 'code',
-    '名称': 'name',
-    '最新价': 'latest_price',
-    '总市值': 'market_cap',
-    '换手率': 'turnover_rate',
-    '市盈率': 'pe_ratio',
-    '市净率': 'pb_ratio',
-    '类型': 'type'
+    代码: "code",
+    名称: "name",
+    最新价: "latest_price",
+    总市值: "market_cap",
+    换手率: "turnover_rate",
+    市盈率: "pe_ratio",
+    市净率: "pb_ratio",
+    类型: "type",
   },
   funds: {
-    '基金代码': 'code',
-    '基金简称': 'name',
-    '基金类型': 'type',
-    '基金规模': 'fund_size',
-    '重仓行业': 'industries',
-    '基金经理': 'managers',
-    '基金净值': 'latest_net_value'
-  }
+    基金代码: "code",
+    基金简称: "name",
+    基金类型: "type",
+    基金规模: "fund_size",
+    重仓行业: "industries",
+    基金经理: "managers",
+    基金净值: "latest_net_value",
+  },
 };
 
 async function initialize() {
   try {
-    await db.runAsync('BEGIN TRANSACTION');
+    await db.runAsync("BEGIN TRANSACTION");
     for (const schema of SCHEMAS) {
       await db.runAsync(schema);
     }
-    await db.runAsync('COMMIT');
+    await db.runAsync("COMMIT");
 
-    await importXLSX('./data/stock.xlsx', 'stocks', FIELD_MAPS.stocks);
-    await importXLSX('./data/fund.xlsx', 'funds', FIELD_MAPS.funds);
+    await importXLSX("./data/stock.xlsx", "stocks", FIELD_MAPS.stocks);
+    await importXLSX("./data/fund.xlsx", "funds", FIELD_MAPS.funds);
 
     // 添加默认用户投资组合数据
     await db.runAsync(`INSERT INTO userInfo (username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount) VALUES
@@ -95,10 +101,12 @@ async function initialize() {
       ('Allen', 'fund', '易方达蓝筹精选', '005827', '2023-03-10', 10000),
       ('Allen', 'fund', '华夏回报混合A', '002001', '2023-04-05', 8000)`);
 
-    console.log('✅ 数据库初始化完成 (5个表已创建，已添加默认投资组合数据)');
+    console.log("✅ 数据库初始化完成 (6个表已创建，已添加默认投资组合数据)");
   } catch (err) {
-    try { await db.runAsync('ROLLBACK'); } catch (e) {}
-    console.error('❌ 初始化失败:', err);
+    try {
+      await db.runAsync("ROLLBACK");
+    } catch (e) {}
+    console.error("❌ 初始化失败:", err);
   } finally {
     await db.closeAsync();
   }

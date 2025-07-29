@@ -1,11 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useRoute, useRouter } from 'vue-router';
 
 // import LoginView from '../views/LoginView.vue';
 // import App from '../App.vue';
-import LoginView from '../views/LoginView.vue';
 import PortfolioManager from '../components/PortfolioManager.vue';
 import StockList from '../components/StockList.vue';
+import LoginView from '../views/LoginView.vue';
 
 // const routes = [
 //     {

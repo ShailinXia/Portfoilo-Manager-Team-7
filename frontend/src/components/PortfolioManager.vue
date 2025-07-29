@@ -187,16 +187,15 @@
 
 <script>
 import axios from 'axios'; // 新增
-// import {Chart, registerables} from 'chart.js';
+
 import * as echarts from 'echarts';
 
 // Chart.register(...registerables);
 
 // 放在你的<script>标签最上面，外面，不要放在methods里
 function getCurrentUsername() {
-  return localStorage.getItem('currentUsername') || 'Allen';
+  return localStorage.getItem('currentUsername');
 }
-
 
 
 export default {
@@ -242,12 +241,12 @@ export default {
       chartError: null,
 
       stocksList: [],
-      selectedStockCode: '',
-      selectedStockName: '',
+      selectedStockCode: '000001',
+      selectedStockName: '平安银行',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
-      selectedStockCode: '000001',
-      stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
+      // selectedStockCode: '000001',
+      // stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
       echartsInstance: null,
       // chartLoading: false,
       // chartError: null,
@@ -360,8 +359,8 @@ export default {
     },
     async onSearch() {
       // 1. 拉取全部数据
-      // const username = getCurrentUsername(); // 随时取
-      const username = 'Allen'; // 随时取
+      const username = getCurrentUsername(); // 随时取
+      // const username = 'Allen'; // 随时取
       console.log('当前用户名:', username);
       const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
@@ -393,8 +392,8 @@ export default {
 
     async refreshAndMergePortfolio() {
       // 主动拉取所有数据
-      // const username = getCurrentUsername(); // 随时取
-      const username = 'Allen'; // 随时取
+      const username = getCurrentUsername(); // 随时取
+      // const username = 'Allen'; // 随时取
       console.log('当前用户名:', username);
       const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
@@ -436,8 +435,8 @@ export default {
     },
 
     async fetchPortfolioItems() {
-      // const username = getCurrentUsername(); // 随时取
-      const username = 'Allen'; // 随时取
+      const username = getCurrentUsername(); // 随时取
+      // const username = 'Allen'; // 随时取
       console.log('当前用户名:', username);
       const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
@@ -489,11 +488,11 @@ export default {
     },
 
     async addInvestment() {
-      // const username = getCurrentUsername(); // 随时取
+      const username = getCurrentUsername(); // 随时取
       console.log('当前用户名:', username);
 
-      const username = 'Allen'; // 随时取
-      console.log('当前用户名:', username);
+      // const username = 'Allen'; // 随时取
+      // console.log('当前用户名:', username);
       // 这里建议参数补全校验
       const postBody = {
         // name: this.newInvestment.name,
@@ -542,9 +541,9 @@ export default {
 
       try {
         // const username = this.itemToDelete.username || 'Allen'; // 保险起见
-        // const username = getCurrentUsername(); // 随时取
-        console.log('当前用户名:', username);
-        const username = 'Allen'; // 随时取
+        const username = getCurrentUsername(); // 随时取
+        // console.log('当前用户名:', username);
+        // const username = 'Allen'; // 随时取
         console.log('当前用户名:', username);
 
         const code = this.itemToDelete.investmentCode;
@@ -769,8 +768,8 @@ export default {
         this.roseChartInstance.dispose();
       }
       this.roseChartInstance = echarts.init(this.$refs.allocationRoseChart);
-      // const username = getCurrentUsername(); // 随时取
-      const username = 'Allen'; // 随时取
+      const username = getCurrentUsername(); // 随时取
+      // const username = 'Allen'; // 随时取
       // console.log('当前用户名:', username);
       // 拉取数据
       fetch(`http://localhost:3000/api/userInfo?username=${username}`)

@@ -47,7 +47,7 @@ SQL=$(sqlite3 "$DB_FILE" <<EOF
 .output /dev/stdout
 SELECT 'DELETE FROM "' || name || '";'
 FROM sqlite_master
-WHERE type='table' AND name NOT LIKE 'userInfo';
+WHERE type='table';
 EOF
 )
 

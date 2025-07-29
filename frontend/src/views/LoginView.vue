@@ -31,8 +31,8 @@
 </template>
 
 <script setup>
-import {ref} from 'vue';
-import {useRouter} from 'vue-router';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['login-success']); // 新增
 
@@ -41,15 +41,6 @@ const password = ref('');
 const error = ref('');
 const router = useRouter();
 
-// const handleLogin = () => {
-//   if (username.value === 'admin' && password.value === '123456') {
-//     localStorage.setItem('isAuthenticated', 'true');
-//     localStorage.setItem('isAuthenticated', 'true');
-//     emit('login-success'); // 通知父组件
-//   } else {
-//     error.value = '用户名或密码错误';
-//   }
-// };
 
 const handleLogin = async () => {
   error.value = '';
