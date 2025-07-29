@@ -135,28 +135,6 @@
       </div>
       <!-- 右侧 -->
       <div class="right-panel">
-        <!--        <div class="card performance-chart">-->
-        <!--          <h2>股票历史数据 (代码: 000001)</h2>-->
-        <!--          <div v-if="chartError" class="error">{{ chartError }}</div>-->
-        <!--          <div class="chart-wrapper">-->
-        <!--            <canvas ref="stockChartCanvas"></canvas>-->
-        <!--          </div>-->
-        <!--          <div class="controls-container">-->
-        <!--            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">-->
-        <!--              {{ chartLoading ? '加载中...' : '刷新数据' }}-->
-        <!--            </button>-->
-        <!--            <div class="date-range-container">-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>开始日期: </label>-->
-        <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>结束日期: </label>-->
-        <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--          </div>-->
-        <!--        </div>-->
         <div class="card performance-chart">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
@@ -215,9 +193,9 @@
 </template>
 
 <script>
-import axios from 'axios'; // 新增
+import axios from 'axios';
 import {Chart, registerables} from 'chart.js';
-import * as echarts from 'echarts'; // 新增
+import * as echarts from 'echarts';
 
 Chart.register(...registerables);
 
@@ -226,8 +204,6 @@ export default {
   data() {
     return {
       portfolioItems: [],
-
-
       investmentTypes: [
         {value: 'stock', label: '股票'},
         {value: 'fund', label: '基金'}
@@ -260,16 +236,19 @@ export default {
       stocksList: [],
       selectedStockCode: '000001',
       selectedStockName: '',
-      stockSearchInput: '',  // 用户输入
+      stockSearchInput: '',
       stockSearchOptions: [],
-      // selectedStockCode: '000001',
-      stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
+      stockCodes: ['000001', '601398', '601939'],
       echartsInstance: null,
-      // chartLoading: false,
-      // chartError: null,
-      // chartStartDate: '',
-      // chartEndDate: '',
-      originStockData: []
+      originStockData: [],
+      // 饼图相关数据
+      pieChartData: {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: []
+        }]
+      }
     };
   },
   computed: {
@@ -284,7 +263,6 @@ export default {
       return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
     },
     dailyChange() {
-      // 模拟每日涨跌 - 实际应用中应从API获取
       return (Math.random() * 200 - 100).toFixed(2);
     },
     dailyChangePercentage() {
@@ -307,7 +285,6 @@ export default {
     this.fetchStockList();
     this.fetchPortfolioItems();
 
-
     window.addEventListener('resize', this.resizeEcharts);
   },
   beforeUnmount() {
@@ -327,7 +304,6 @@ export default {
         } else if (val === 'fund') {
           this.fetchFunds();
         }
-        // 清空输入
         this.newInvestment.name = '';
         this.newInvestment.symbol = '';
         this.nameSuggestions = [];
@@ -362,22 +338,20 @@ export default {
       }).format(value);
     },
     async onSearch() {
-      // 主动请求Allen的所有数据
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
-      this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
+      this.portfolioItems = this.mergePortfolioItems(data);
       this.filterPortfolio();
+      this.updateAllocationChart(); // 更新饼图
     },
     async refreshAndMergePortfolio() {
-      // 主动拉取所有数据
       const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
-      // 合并同名项目
       this.portfolioItems = this.mergePortfolioItems(data);
-      // 再次根据当前搜索词过滤
       this.filterPortfolio();
+      this.updateAllocationChart(); // 更新饼图
     },
     mergePortfolioItems(items) {
       const map = {};
@@ -409,35 +383,43 @@ export default {
     },
 
     async fetchPortfolioItems() {
-      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
-      let data = await resp.json();
-      if (!Array.isArray(data)) data = [data];
-      this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
-      this.filterPortfolio();
-    },
-
-    formatCurrency(val) {
-      return '¥' + Number(val).toFixed(2);
+      try {
+        const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+        let data = await resp.json();
+        if (!Array.isArray(data)) data = [data];
+        this.portfolioItems = this.mergePortfolioItems(data);
+        this.filterPortfolio();
+        // 确保在数据获取后立即更新饼图
+        this.$nextTick(() => {
+          this.updateAllocationChart();
+        });
+      } catch (error) {
+        console.error('获取投资组合数据失败:', error);
+      }
     },
 
     async fetchStocks() {
-      const res = await fetch('http://localhost:3000/api/stocks/all');
-      // 保证 allStocks 里的 type 统一为 'stock'
-      this.allStocks = (await res.json()).map(item => ({
-        ...item,
-        type: 'stock'
-      }));cd
+      try {
+        const res = await fetch('http://localhost:3000/api/stocks/all');
+        this.allStocks = (await res.json()).map(item => ({
+          ...item,
+          type: 'stock'
+        }));
+      } catch (error) {
+        console.error('获取股票列表失败:', error);
+      }
     },
     async fetchFunds() {
-      const res = await fetch('http://localhost:3000/api/funds/all');
-      // 保证 allFunds 里的 type 统一为 'fund'
-      this.allFunds = (await res.json()).map(item => ({
-        ...item,
-        type: 'fund'
-      }));
-      console.log("基金列表：", this.allFunds);
+      try {
+        const res = await fetch('http://localhost:3000/api/funds/all');
+        this.allFunds = (await res.json()).map(item => ({
+          ...item,
+          type: 'fund'
+        }));
+      } catch (error) {
+        console.error('获取基金列表失败:', error);
+      }
     },
-
 
     onNameInput(e) {
       const val = e.target.value.trim();
@@ -455,31 +437,11 @@ export default {
       this.newInvestment.name = item.name;
       this.newInvestment.symbol = item.code;
       this.nameSuggestions = [];
-      this.$refs['investment-name']?.blur?.();
     },
 
-    // // 用户选中建议后填充
-    // selectSuggestion(item) {
-    //   if (this.newInvestment.type === 'stock') {
-    //     this.newInvestment.name = item.name;
-    //     this.newInvestment.symbol = item.code;
-    //   } else {
-    //     // 基金
-    //     this.newInvestment.name = item.short_name;
-    //     this.newInvestment.symbol = item.fund_code;
-    //   }
-    //   this.nameSuggestions = [];
-    // },
-
     async addInvestment() {
-      // 这里建议参数补全校验
       const postBody = {
-        // name: this.newInvestment.name,
-        // code: this.newInvestment.symbol,
-        // type: this.newInvestment.type,
-        // amount: this.newInvestment.amount,
-        // purchaseDate: this.newInvestment.purchaseDate
-        username: "Allen",                                 // 新增，数据库要求
+        username: "Allen",
         investmentType: this.newInvestment.type,
         investmentName: this.newInvestment.name,
         investmentCode: this.newInvestment.symbol,
@@ -495,7 +457,7 @@ export default {
         const result = await resp.json();
         if (result.success) {
           alert("添加投资项目成功！");
-          // 重点：添加成功后拉取最新列表并自动合并
+          // 添加成功后立即更新数据
           await this.fetchPortfolioItems();
           this.newInvestment = {
             type: 'stock',
@@ -518,7 +480,7 @@ export default {
     },
     async deleteInvestment() {
       try {
-        const username = this.itemToDelete.username || 'Allen'; // 保险起见
+        const username = this.itemToDelete.username || 'Allen';
         const code = this.itemToDelete.investmentCode;
         const type = this.itemToDelete.investmentType;
         const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentType=${encodeURIComponent(type)}`;
@@ -527,7 +489,8 @@ export default {
         });
         const result = await resp.json();
         if (result.success || (result.message && result.message.includes('成功'))) {
-          await this.onSearch(); // 刷新
+          // 删除成功后立即更新数据
+          await this.fetchPortfolioItems();
           this.showDeleteModal = false;
           this.itemToDelete = null;
         } else {
@@ -551,65 +514,15 @@ export default {
     resizeEcharts() {
       if (this.echartsInstance) this.echartsInstance.resize();
     },
-    calculateMA(dayCount, prices) {
-      const result = [];
-      for (let i = 0; i < prices.length; i++) {
-        if (i < dayCount - 1) {
-          result.push('-');
-          continue;
-        }
-        let sum = 0;
-        for (let j = 0; j < dayCount; j++) {
-          sum += prices[i - j];
-        }
-        result.push(sum / dayCount);
-      }
-      return result;
-    },
     async fetchStockList() {
       try {
         const res = await axios.get('http://localhost:3000/api/stocks');
         this.stocksList = res.data;
       } catch (err) {
         this.stocksList = [];
-        // 错误处理
       }
-    },
-    updateSelectedStockName() {
-      // 用 code 找到 name
-      const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
-      console.log(stock)
-      this.selectedStockName = stock ? stock.name : '';
-
-    },
-    // onSelectStock(code) {
-    //   this.selectedStockCode = code;
-    //   this.updateSelectedStockName();
-    //   // ...拉历史数据
-    //   this.fetchStockData();
-    // },
-    // 实时匹配输入的代码
-    onStockSearchInput() {
-      const keyword = this.stockSearchInput.trim();
-      if (!keyword) {
-        this.stockSearchOptions = [];
-        return;
-      }
-      // 支持模糊匹配代码或名称
-      this.stockSearchOptions = this.stocksList.filter(s =>
-          s.code.includes(keyword) || (s.name && s.name.includes(keyword))
-      );
-    },
-    // 选择候选
-    onSelectStock(item) {
-      this.selectedStockCode = item.code;
-      this.selectedStockName = item.name;
-      this.stockSearchInput = `${item.name} (${item.code})`;
-      this.stockSearchOptions = [];
-      this.fetchStockData(); // 拉取历史数据
     },
     async fetchStockData() {
-      // 检查股票代码是否为六位数字
       if (!/^\d{6}$/.test(this.selectedStockCode)) {
         this.chartError = '请输入有效的六位股票代码';
         return;
@@ -628,13 +541,11 @@ export default {
         const response = await axios.get(url, {params});
         let rawData = response.data;
 
-        // 如果返回的数据为空，则显示无历史数据
         if (!rawData || rawData.length === 0) {
           this.chartError = '无历史数据';
           return;
         }
 
-        // 处理数据
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
         this.originStockData = rawData;
         this.renderEcharts();
@@ -733,32 +644,70 @@ export default {
             title: {
               display: true,
               text: '资产类型分配'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(2);
+                  return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                }
+              }
             }
           }
         }
       });
-
-
-    },
-    updateCharts() {
-      this.performanceChart.data = this.getPerformanceChartData();
-      this.performanceChart.update();
     },
     updateAllocationChart() {
-      this.allocationChart.data = this.getAllocationChartData();
-      this.allocationChart.update();
+      if (this.allocationChart) {
+        // 销毁旧的图表实例
+        this.allocationChart.destroy();
+        
+        // 重新创建图表实例
+        const allocationCtx = this.$refs.allocationChart.getContext('2d');
+        this.allocationChart = new Chart(allocationCtx, {
+          type: 'pie',
+          data: this.getAllocationChartData(),
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: '资产类型分配'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.raw || 0;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(2);
+                    return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
     },
     getAllocationChartData() {
-      const types = {};
-
+      // 按投资类型分类并计算总金额
+      const typeSums = {};
       this.portfolioItems.forEach(item => {
-        if (!types[item.type]) {
-          types[item.type] = 0;
-        }
-        types[item.type] += item.currentValue;
+        const type = item.investmentType;
+        typeSums[type] = (typeSums[type] || 0) + Number(item.investmentAmount);
       });
 
-      const typeNames = Object.keys(types);
+      // 计算总投资额
+      const totalAmount = Object.values(typeSums).reduce((sum, amount) => sum + amount, 0);
+      
+      // 准备饼图数据
+      const labels = [];
+      const data = [];
       const backgroundColors = [
         'rgba(255, 99, 132, 0.7)',
         'rgba(54, 162, 235, 0.7)',
@@ -766,17 +715,28 @@ export default {
         'rgba(75, 192, 192, 0.7)',
         'rgba(153, 102, 255, 0.7)'
       ];
+      let colorIndex = 0;
+
+      for (const [type, sum] of Object.entries(typeSums)) {
+        const percentage = totalAmount > 0 ? ((sum / totalAmount) * 100).toFixed(2) : '0.00';
+        const typeName = type === 'stock' ? '股票' : type === 'fund' ? '基金' : type;
+        labels.push(`${typeName} (${percentage}%)`);
+        data.push(sum);
+        
+        // 分配颜色
+        if (colorIndex >= backgroundColors.length) colorIndex = 0;
+        backgroundColors[colorIndex++];
+      }
 
       return {
-        labels: typeNames,
+        labels: labels,
         datasets: [{
-          data: typeNames.map(type => types[type]),
-          backgroundColor: backgroundColors.slice(0, typeNames.length),
+          data: data,
+          backgroundColor: backgroundColors.slice(0, Object.keys(typeSums).length),
           borderWidth: 1
         }]
       };
     }
-
   }
 };
 </script>
@@ -808,13 +768,11 @@ export default {
 
 .portfolio-manager {
   font-family: 'Arial', sans-serif;
-  /*max-width: 1200px;*/
   margin: 0 auto;
   padding: 20px;
   color: #333;
 }
 
-/* 可以放在你的全局样式文件或组件内style标签里 */
 .custom-select {
   height: 32px;
   font-size: 15px;
@@ -901,31 +859,19 @@ export default {
   display: flex;
   flex-direction: row;
   width: 100%;
-  /*height: 100vh;*/
   box-sizing: border-box;
   gap: 32px;
   padding: 5px 32px 0 32px;
   background: #f5f8fc;
 }
 
-/*.card {*/
-/*  background: #fff;*/
-/*  border-radius: 18px;*/
-/*  box-shadow: 0 2px 12px #e2eafc44;*/
-/*  padding: 24px 28px 28px 28px;*/
-/*  margin-bottom: 0;*/
-/*  display: flex;*/
-/*  flex-direction: column;*/
-/*  min-width: 0;*/
-/*}*/
-
 .left-panel, .right-panel {
   flex: 1 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px; /* 内部卡片间距，推荐加上 */
-  background: none; /* 父 panel 透明 */
+  gap: 24px;
+  background: none;
   box-shadow: none;
   padding: 0;
 }
@@ -933,12 +879,11 @@ export default {
 
 .portfolio-list, .add-investment, .performance-chart, .allocation-chart {
   background: #fff;
-  border-radius: 16px; /* 圆角加大，显得更有质感 */
-  padding: 28px 30px 26px 30px; /* 加大内边距，信息更舒展 */
+  border-radius: 16px;
+  padding: 28px 30px 26px 30px;
   box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);
   margin-bottom: 28px;
   transition: box-shadow 0.18s, transform 0.18s;
-  /* 卡片悬浮效果，可选： */
   will-change: box-shadow, transform;
 }
 
@@ -950,15 +895,6 @@ export default {
   transform: translateY(-2px) scale(1.01);
 }
 
-/*.allocation-chart {*/
-/*  background: white;*/
-/*  border-radius: 8px;*/
-/*  padding: 20px;*/
-/*  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);*/
-/*  height: 350px;*/
-/*  margin-bottom: 20px;*/
-/*}*/
-/* 卡片内标题统一美化 */
 .portfolio-list h2,
 .add-investment h2,
 .performance-chart h2 {
@@ -1036,34 +972,11 @@ h2 {
   margin-bottom: 18px;
 }
 
-/*.investment-row:hover {*/
-/*  box-shadow: 0 8px 28px rgba(41, 57, 77, 0.11), 0 2px 8px #42d39233;*/
-/*  transform: translateY(-2px) scale(1.01);*/
-/*}*/
-
-.investment-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.investment-item:last-child {
-  border-bottom: none;
-}
-
-
 .item-info {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
-}
-
-.item-info h3 {
-  margin: 0 0 5px;
-  font-size: 16px;
 }
 
 .item-sub {
@@ -1245,14 +1158,12 @@ h2 {
   background: #27ae60;
 }
 
-/* 股票图表样式 */
 .chart-wrapper {
   position: relative;
   height: 300px;
   margin: 20px 0;
 }
 
-/* 修复控制区域布局 */
 .controls-container {
   display: flex;
   flex-direction: column;
@@ -1316,7 +1227,6 @@ h2 {
   margin: 10px 0;
 }
 
-/* 资产分配图表样式 */
 .chart-container {
   position: relative;
   height: 270px;
@@ -1396,7 +1306,6 @@ h2 {
     padding: 14px 8px;
   }
 
-  /* 在小屏幕上优化日期范围布局 */
   .date-range-container {
     flex-direction: column;
     gap: 8px;
@@ -1419,20 +1328,4 @@ h2 {
     margin-bottom: 14px;
   }
 }
-
-/*.add-investment {*/
-/*  max-width: 430px;*/
-/*  margin: 0 auto;*/
-/*}*/
-
-.add-investment form {
-  width: 100%;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  box-sizing: border-box;
-}
-
 </style>
