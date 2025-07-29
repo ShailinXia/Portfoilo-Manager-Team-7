@@ -8,3 +8,6 @@ server.js
 structure.txt
 images/
 *.http
+dummydata/
+*.db-journal
+*.db

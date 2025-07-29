@@ -73,7 +73,6 @@
             <div class="form-group">
               <label for="investment-type">投资类型</label>
               <select id="investment-type" v-model="newInvestment.type" required>
-                <!--                <option v-for="t in investmentTypes" :value="t.value">{{ t.label }}</option>-->
                 <option v-for="t in investmentTypes" :value="t.value" :key="t.value">{{ t.label }}</option>
               </select>
             </div>
@@ -163,33 +162,37 @@
         <!--          </div>-->
         <!--        </div>-->
         <div class="card performance-chart">
-          <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
 
-            <select
-                v-model="selectedStockCode"
-                @change="fetchStockData"
-                class="custom-select"
-            >
-              <option v-for="code in stockCodes" :value="code" :key="code">{{ code }}</option>
-            </select>
+            <div class="stock-code-input">
+              <input
+                  type="text"
+                  v-model="selectedStockCode"
+                  @input="validateStockCode"
+                  placeholder="输入股票代码(6位)"
+                  maxlength="6"
+                  class="custom-input"
+              />
+              <span v-if="stockCodeError" class="error-text">{{ stockCodeError }}</span>
+            </div>
           </div>
           <div v-if="chartError" class="error">{{ chartError }}</div>
           <div ref="echartsContainer" class="chart-wrapper" style="height:350px;width:100%"></div>
           <div class="controls-container">
-            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">
+            <button @click="fetchStockData" :disabled="chartLoading || stockCodeError" class="refresh-btn">
               {{ chartLoading ? '加载中...' : '刷新数据' }}
             </button>
-            <!--            <div class="date-range-container">-->
-            <!--              <div class="date-input-group">-->
-            <!--                <label>开始日期: </label>-->
-            <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
-            <!--              </div>-->
-            <!--              <div class="date-input-group">-->
-            <!--                <label>结束日期: </label>-->
-            <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
-            <!--              </div>-->
-            <!--            </div>-->
+            <div class="date-range-container">
+              <div class="date-input-group">
+                <label>开始日期: </label>
+                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>
+              </div>
+              <div class="date-input-group">
+                <label>结束日期: </label>
+                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -337,6 +340,25 @@ export default {
   },
 
   methods: {
+    validateStockCode() {
+      if (!this.selectedStockCode) {
+        this.stockCodeError = '请输入股票代码';
+        return;
+      }
+
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.stockCodeError = '股票代码必须是6位数字';
+        return;
+      }
+
+      const codeNum = parseInt(this.selectedStockCode);
+      if (codeNum < 1 || codeNum > 999999) {
+        this.stockCodeError = '股票代码必须在000001-999999之间';
+        return;
+      }
+
+      this.stockCodeError = '';
+    },
     formatCurrency(value) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -403,11 +425,11 @@ export default {
     },
 
     async fetchStocks() {
-      const res = await fetch('http://localhost:3000/api/stocks');
+      const res = await fetch('http://localhost:3000/api/stocks/');
       this.allStocks = await res.json();
     },
     async fetchFunds() {
-      const res = await fetch('http://localhost:3000/api/funds');
+      const res = await fetch('http://localhost:3000/api/funds/');
       this.allFunds = await res.json();
       console.log("基金列表：", this.allFunds); // 加这个看有无数据
 
@@ -495,7 +517,7 @@ export default {
         const username = this.itemToDelete.username || 'Allen'; // 保险起见
         const code = this.itemToDelete.investmentCode;
         const type = this.itemToDelete.investmentType;
-        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentCode=${encodeURIComponent(type)}`;
+        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentType=${encodeURIComponent(type)}`;
         const resp = await fetch(url, {
           method: 'DELETE'
         });
@@ -512,132 +534,6 @@ export default {
       }
     },
 
-
-    // // 股票图表相关方法
-    // processStockData(data) {
-    //   if (!data || data.length === 0) return [];
-    //
-    //   const grouped = {};
-    //
-    //   data.forEach(item => {
-    //     if (!grouped[item.date]) {
-    //       grouped[item.date] = {
-    //         prices: [],
-    //         date: item.date
-    //       };
-    //     }
-    //     grouped[item.date].prices.push(item.price);
-    //   });
-    //
-    //   return Object.values(grouped).map(day => ({
-    //     date: day.date,
-    //     avgPrice: day.prices.reduce((sum, price) => sum + price, 0) / day.prices.length,
-    //     minPrice: Math.min(...day.prices),
-    //     maxPrice: Math.max(...day.prices)
-    //   }));
-    // },
-    // destroyChart() {
-    //   if (this.chartInstance) {
-    //     this.chartInstance.destroy();
-    //     this.chartInstance = null;
-    //   }
-    // },
-    // async fetchStockData() {
-    //   try {
-    //     this.chartLoading = true;
-    //     this.chartError = null;
-    //
-    //     const response = await fetch(
-    //         `http://localhost:3000/api/stocks/000001/history?start=${this.chartStartDate}&end=${this.chartEndDate}`
-    //     );
-    //
-    //     if (!response.ok) {
-    //       throw new Error(`获取数据失败: ${response.status}`);
-    //     }
-    //
-    //     const data = await response.json();
-    //
-    //     this.destroyChart();
-    //     this.chartHistory = this.processStockData(data);
-    //
-    //     if (!this.$refs.stockChartCanvas || this.chartHistory.length === 0) return;
-    //
-    //     const ctx = this.$refs.stockChartCanvas.getContext('2d');
-    //     if (!ctx) return;
-    //
-    //     this.chartInstance = new Chart(ctx, {
-    //       type: 'line',
-    //       data: {
-    //         labels: this.chartHistory.map(item => item.date),
-    //         datasets: [
-    //           {
-    //             label: '平均价格',
-    //             data: this.chartHistory.map(item => item.avgPrice),
-    //             borderColor: 'rgb(75, 192, 192)',
-    //             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-    //             tension: 0.1,
-    //             fill: true
-    //           },
-    //           {
-    //             label: '最低价格',
-    //             data: this.chartHistory.map(item => item.minPrice),
-    //             borderColor: 'rgb(255, 99, 132)',
-    //             backgroundColor: 'rgba(255, 99, 132, 0.2)',
-    //             borderDash: [5, 5],
-    //             tension: 0.1
-    //           },
-    //           {
-    //             label: '最高价格',
-    //             data: this.chartHistory.map(item => item.maxPrice),
-    //             borderColor: 'rgb(54, 162, 235)',
-    //             backgroundColor: 'rgba(54, 162, 235, 0.2)',
-    //             borderDash: [5, 5],
-    //             tension: 0.1
-    //           }
-    //         ]
-    //       },
-    //       options: {
-    //         responsive: true,
-    //         maintainAspectRatio: false,
-    //         plugins: {
-    //           title: {
-    //             display: true,
-    //             text: '股票价格走势'
-    //           },
-    //           tooltip: {
-    //             mode: 'index',
-    //             intersect: false
-    //           }
-    //         },
-    //         scales: {
-    //           y: {
-    //             beginAtZero: false,
-    //             title: {
-    //               display: true,
-    //               text: '价格 (元)'
-    //             }
-    //           },
-    //           x: {
-    //             title: {
-    //               display: true,
-    //               text: '日期'
-    //             }
-    //           }
-    //         },
-    //         interaction: {
-    //           mode: 'nearest',
-    //           axis: 'x',
-    //           intersect: false
-    //         }
-    //       }
-    //     });
-    //   } catch (err) {
-    //     this.chartError = '获取数据失败: ' + err.message;
-    //     console.error('获取数据时出错:', err);
-    //   } finally {
-    //     this.chartLoading = false;
-    //   }
-    // },
     initEcharts() {
       if (this.echartsInstance) return;
       this.echartsInstance = echarts.init(this.$refs.echartsContainer);
@@ -709,31 +605,38 @@ export default {
       this.fetchStockData(); // 拉取历史数据
     },
     async fetchStockData() {
-      this.chartLoading = true;
-      this.chartError = null;
-      if (!this.selectedStockCode) {
-        this.chartError = '请先选择股票代码';
-        this.chartLoading = false;
+      // 检查股票代码是否为六位数字
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.chartError = '请输入有效的六位股票代码';
         return;
       }
-      console.log('fetchStockData selectedStockCode:', this.selectedStockCode);
+
+      this.chartLoading = true;
+      this.chartError = null;
 
       try {
-        // 日期参数可选
         let url = `http://localhost:3000/api/stocks/${this.selectedStockCode}/history`;
-        // let url = `http://localhost:8080/api/stocks/000001/history`;
-        const params = {};
-        if (this.chartStartDate) params.start = this.chartStartDate;
-        if (this.chartEndDate) params.end = this.chartEndDate;
+        const params = {
+          start: this.chartStartDate || '2025-01-01',
+          end: this.chartEndDate || '2025-07-25'
+        };
+
         const response = await axios.get(url, {params});
         let rawData = response.data;
-        // 升序排序
+
+        // 如果返回的数据为空，则显示无历史数据
+        if (!rawData || rawData.length === 0) {
+          this.chartError = '无历史数据';
+          return;
+        }
+
+        // 处理数据
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
         this.originStockData = rawData;
         this.renderEcharts();
-        this.stockData = response.data; // 更新数据
       } catch (err) {
-        this.chartError = '股票历史数据加载失败';
+        this.chartError = '股票历史数据加载失败: ' + (err.response?.data?.message || err.message);
+        console.error('获取股票数据失败:', err);
       } finally {
         this.chartLoading = false;
       }
@@ -743,11 +646,12 @@ export default {
         this.chartError = '无历史数据';
         return;
       }
-      // x轴日期，y轴收盘价
+
       const dates = this.originStockData.map(d => d.date);
       const prices = this.originStockData.map(d => d.price);
       let min = Math.min(...prices);
       let max = Math.max(...prices);
+
       if (min === max) {
         min = min * 0.95;
         max = max * 1.05;
@@ -755,8 +659,10 @@ export default {
         min = min * 0.9;
         max = max * 1.1;
       }
+
       min = Math.floor(min * 100) / 100;
       max = Math.ceil(max * 100) / 100;
+
       const option = {
         tooltip: {
           trigger: 'axis',
@@ -765,9 +671,7 @@ export default {
           }
         },
         title: {
-          text: this.selectedStockName
-              ? `${this.selectedStockName} (${this.selectedStockCode})`
-              : `(${this.selectedStockCode})`,
+          text: `(${this.selectedStockCode})`,
           left: 'center'
         },
         toolbox: {
@@ -779,7 +683,6 @@ export default {
         },
         xAxis: {type: 'category', data: dates, boundaryGap: false},
         yAxis: {type: 'value', min, max, boundaryGap: [0, '100%']},
-
         dataZoom: [
           {
             type: 'inside',
@@ -813,7 +716,6 @@ export default {
 
       this.echartsInstance.setOption(option, true);
     },
-
     // 资产分配图表相关方法
     initAllocationChart() {
       const allocationCtx = this.$refs.allocationChart.getContext('2d');
@@ -1165,6 +1067,7 @@ h2 {
   color: #8a98b6;
   font-family: 'Arial', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
 }
+
 .type-label {
   margin-left: 6px;
   font-weight: 600;
@@ -1174,6 +1077,7 @@ h2 {
   padding: 1px 10px;
   border-radius: 7px;
 }
+
 .item-title {
   font-weight: bold;
   font-size: 16px;
@@ -1181,10 +1085,12 @@ h2 {
   margin-bottom: 4px;
   font-family: 'Arial Black', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
 }
+
 .type-label.stock {
   color: #409eff;
   background: #e8f3ff;
 }
+
 .type-label.fund {
   color: #ff8800;
   background: #fff6e1;
@@ -1209,10 +1115,12 @@ h2 {
   padding: 0;
   transition: transform 0.15s;
 }
+
 .delete-btn.modern-delete:hover {
   transform: scale(1.18);
   filter: brightness(1.14);
 }
+
 .name {
   font-weight: 600;
   font-size: 17px;
@@ -1514,8 +1422,7 @@ h2 {
 /*}*/
 
 .add-investment form {
-  max-width: 480px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .form-group input,
