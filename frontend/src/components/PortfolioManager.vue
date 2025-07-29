@@ -155,7 +155,7 @@
         <div class="card allocation-chart">
           <h2>资产分配</h2>
           <div class="chart-container">
-            <canvas ref="allocationChart"></canvas>
+            <div ref="allocationChart" style="height: 350px; width: 100%;"></div>
           </div>
         </div>
       </div>
@@ -175,11 +175,8 @@
 </template>
 
 <script>
-import {Chart, registerables} from 'chart.js';
 import * as echarts from 'echarts';
 import axios from 'axios';
-
-Chart.register(...registerables);
 
 export default {
   name: 'PortfolioManager',
@@ -222,7 +219,8 @@ export default {
       ],
       investmentTypes: [
         {value: 'stock', label: '股票'},
-        {value: 'fund', label: '基金'}
+        {value: 'fund', label: '基金'},
+        {value: 'crypto', label: '加密货币'}
       ],
       newInvestment: {
         type: 'stock',
@@ -239,7 +237,7 @@ export default {
       filteredItems: [],
       showDeleteModal: false,
       itemToDelete: null,
-      allocationChart: null,
+      allocationEChart: null, // 改为ECharts实例
 
       // 股票图表相关数据
       selectedStockCode: '000001',
@@ -274,16 +272,19 @@ export default {
   },
   mounted() {
     this.filteredItems = [...this.portfolioItems];
-    this.initAllocationChart();
+    this.initAllocationEChart(); // 改为初始化ECharts
     this.initEcharts();
     this.fetchStockData();
     this.fetchStockList();
 
     window.addEventListener('resize', this.resizeEcharts);
+    window.addEventListener('resize', this.resizeAllocationChart);
   },
   beforeUnmount() {
     this.destroyEcharts();
+    this.destroyAllocationEChart();
     window.removeEventListener('resize', this.resizeEcharts);
+    window.removeEventListener('resize', this.resizeAllocationChart);
   },
   watch: {
     selectedStockCode: 'fetchStockData',
@@ -408,7 +409,7 @@ export default {
       this.filterPortfolio();
       this.showDeleteModal = false;
       this.itemToDelete = null;
-      this.updateAllocationChart();
+      this.updateAllocationEChart(); // 更新ECharts图表
     },
     initEcharts() {
       if (this.echartsInstance) return;
@@ -422,6 +423,105 @@ export default {
     },
     resizeEcharts() {
       if (this.echartsInstance) this.echartsInstance.resize();
+    },
+    // 初始化资产分配ECharts图表
+    initAllocationEChart() {
+      if (this.allocationEChart) return;
+      this.allocationEChart = echarts.init(this.$refs.allocationChart);
+      this.updateAllocationEChart();
+    },
+    // 销毁资产分配ECharts图表
+    destroyAllocationEChart() {
+      if (this.allocationEChart) {
+        this.allocationEChart.dispose();
+        this.allocationEChart = null;
+      }
+    },
+    // 调整资产分配图表大小
+    resizeAllocationChart() {
+      if (this.allocationEChart) this.allocationEChart.resize();
+    },
+    // 更新资产分配图表数据
+    updateAllocationEChart() {
+      if (!this.allocationEChart) return;
+      
+      // 按资产类型分组
+      const typeMap = {};
+      this.portfolioItems.forEach(item => {
+        if (!typeMap[item.type]) {
+          typeMap[item.type] = 0;
+        }
+        typeMap[item.type] += item.currentValue;
+      });
+      
+      // 转换为南丁格尔玫瑰图所需格式
+      const data = Object.keys(typeMap).map(type => ({
+        value: typeMap[type],
+        name: type === 'stock' ? '股票' : 
+              type === 'fund' ? '基金' : 
+              type === 'crypto' ? '加密货币' : type
+      }));
+      
+      // 定义颜色
+      const colors = [
+        '#5470c6', '#91cc75', '#fac858', '#ee6666', 
+        '#73c0de', '#3ba272', '#fc8452', '#9a60b4'
+      ];
+      
+      // 配置选项
+      const option = {
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b}: {c} ({d}%)'
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left',
+          data: data.map(item => item.name)
+        },
+        toolbox: {
+          show: true,
+          feature: {
+            mark: { show: true },
+            dataView: { show: true, readOnly: false },
+            restore: { show: true },
+            saveAsImage: { show: true }
+          }
+        },
+        series: [
+          {
+            name: '资产分配',
+            type: 'pie',
+            radius: ['20%', '80%'],
+            center: ['50%', '50%'],
+            roseType: 'area',
+            itemStyle: {
+              borderRadius: 8,
+              borderColor: '#fff',
+              borderWidth: 2
+            },
+            label: {
+              show: true,
+              formatter: '{b}: {d}%'
+            },
+            emphasis: {
+              label: {
+                show: true,
+                fontSize: '16',
+                fontWeight: 'bold'
+              }
+            },
+            data: data.map((item, index) => ({
+              ...item,
+              itemStyle: {
+                color: colors[index % colors.length]
+              }
+            }))
+          }
+        ]
+      };
+      
+      this.allocationEChart.setOption(option);
     },
     async fetchStockList() {
       try {
@@ -542,55 +642,6 @@ export default {
       };
 
       this.echartsInstance.setOption(option, true);
-    },
-    initAllocationChart() {
-      const allocationCtx = this.$refs.allocationChart.getContext('2d');
-      this.allocationChart = new Chart(allocationCtx, {
-        type: 'pie',
-        data: this.getAllocationChartData(),
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: '资产类型分配'
-            }
-          }
-        }
-      });
-    },
-    updateAllocationChart() {
-      this.allocationChart.data = this.getAllocationChartData();
-      this.allocationChart.update();
-    },
-    getAllocationChartData() {
-      const types = {};
-
-      this.portfolioItems.forEach(item => {
-        if (!types[item.type]) {
-          types[item.type] = 0;
-        }
-        types[item.type] += item.currentValue;
-      });
-
-      const typeNames = Object.keys(types);
-      const backgroundColors = [
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(153, 102, 255, 0.7)'
-      ];
-
-      return {
-        labels: typeNames,
-        datasets: [{
-          data: typeNames.map(type => types[type]),
-          backgroundColor: backgroundColors.slice(0, typeNames.length),
-          borderWidth: 1
-        }]
-      };
     }
   }
 };
@@ -948,7 +999,7 @@ h2 {
 
 .chart-container {
   position: relative;
-  height: 270px;
+  height: 350px; /* 增加高度以容纳新图表 */
   margin-top: 20px;
 }
 
@@ -1046,6 +1097,10 @@ h2 {
   .allocation-chart h2 {
     font-size: 18px;
     margin-bottom: 14px;
+  }
+  
+  .chart-container {
+    height: 300px; /* 移动端调整高度 */
   }
 }
 </style>
