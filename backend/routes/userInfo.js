@@ -150,4 +150,14 @@ router.get("/portfolio", (req, res) => {
   }
 });
 
+// 获取所有股票信息
+router.get("/all", (req, res) => {
+  const stocks = db.prepare("SELECT * FROM stocks").all();
+  if (stocks.length > 0) {
+    res.json(stocks);
+  } else {
+    res.status(404).json({ message: "没有找到股票信息" });
+  }
+});
+
 module.exports = router;
