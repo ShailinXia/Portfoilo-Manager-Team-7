@@ -216,7 +216,7 @@
 
 <script>
 import axios from 'axios'; // 新增
-import {Chart, registerables} from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 import * as echarts from 'echarts'; // 新增
 
 Chart.register(...registerables);
@@ -259,7 +259,7 @@ export default {
 
       stocksList: [],
       selectedStockCode: '000001',
-      selectedStockName: '',
+      selectedStockName: '平安银行',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
       // selectedStockCode: '000001',

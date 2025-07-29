@@ -194,8 +194,9 @@ router.get("/:code/history", (req, res) => {
   const { start, end } = req.query;
 
   let sql = `
-    SELECT date, price
+    SELECT date, price, name
     FROM stock_history
+    JOIN stocks ON stock_history.stock_code = stocks.code
     WHERE stock_code = ?
   `;
   const params = [code];
