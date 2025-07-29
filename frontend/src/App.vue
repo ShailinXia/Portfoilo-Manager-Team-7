@@ -21,6 +21,8 @@ const checkAuthStatus = () => {
 // 处理退出登录
 const handleLogout = () => {
   localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('currentUsername');
+
   isAuthenticated.value = false;
   activeTab.value = 'portfolio'; // 重置选项卡
 };

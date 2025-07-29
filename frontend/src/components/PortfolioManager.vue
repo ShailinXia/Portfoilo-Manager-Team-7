@@ -25,10 +25,10 @@
       </div>
     </div>
 
-    <div class="content">
+    <div class="dashboard-container">
       <!-- 左侧 -->
-      <div class="left-panel">
-        <div class="card portfolio-list">
+      <div class="dashboard-col left-col">
+        <div class="card portfolio-list-card">
           <h2>我的投资组合</h2>
           <div class="search-bar">
             <input v-model="searchQuery" placeholder="请输入名称或代码..." @keyup.enter="onSearch"/>
@@ -39,46 +39,40 @@
                 :max="today"
                 placeholder="选择日期"
             />
-<!--            <button @click="searchDate = ''" class="clear-date-btn">清除日期</button>-->
             <button @click="onSearch">搜索</button>
           </div>
-          <ul class="investment-items">
-            <li
-                v-for="item in filteredItems"
-                :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType"
-                class="investment-row"
-            >
-              <!-- 左侧：项目名称/代码/类型 -->
-              <div class="item-info">
-                <div class="item-title">{{ item.investmentName }}</div>
-                <div class="item-sub">
-                  {{ item.investmentCode }} ·
-                  <span :class="['type-label', item.investmentType]">
-        {{ item.investmentType === 'stock' ? '股票' : '基金' }}
-      </span>
+          <!-- 投资组合滚动区 -->
+          <div class="portfolio-list-scroll">
+            <ul class="investment-items">
+              <li
+                  v-for="item in filteredItems"
+                  :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType"
+                  class="investment-row"
+              >
+                <div class="item-info">
+                  <div class="item-title">{{ item.investmentName }}</div>
+                  <div class="item-sub">
+                    {{ item.investmentCode }} ·
+                    <span :class="['type-label', item.investmentType]">
+                      {{ item.investmentType === 'stock' ? '股票' : '基金' }}
+                    </span>
+                  </div>
                 </div>
-              </div>
-
-              <!-- 中间：金额 -->
-              <div class="item-amount">
-                {{ formatCurrency(item.investmentAmount) }}
-              </div>
-
-              <!-- 右侧：删除按钮 -->
-              <button class="sell-btn" @click="confirmDelete(item)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: middle;">
-                  <circle cx="9" cy="9" r="9" fill="#2196F3"/>
-                  <!-- 钱袋icon（可替换为其他卖出icon） -->
-                  <path d="M9 4 v4 m0 0 l3 3 m-3-3 l-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <span style="margin-left: 6px; color:#fff; font-weight:600;">卖出</span>
-              </button>
-
-            </li>
-          </ul>
-
+                <div class="item-amount">
+                  {{ formatCurrency(item.investmentAmount) }}
+                </div>
+                <button class="sell-btn" @click="confirmDelete(item)">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: middle;">
+                    <circle cx="9" cy="9" r="9" fill="#2196F3"/>
+                    <path d="M9 4 v4 m0 0 l3 3 m-3-3 l-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span style="margin-left: 6px; color:#fff; font-weight:600;">卖出</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="card add-investment">
+        <div class="card add-investment-card">
           <h2>添加投资项目</h2>
           <form @submit.prevent="addInvestment">
             <div class="form-group">
@@ -106,7 +100,6 @@
                   {{ item.name }} ({{ item.code }})
                 </li>
               </ul>
-
             </div>
             <div class="form-group">
               <label for="investment-symbol">代码</label>
@@ -119,7 +112,6 @@
                   placeholder="请输入投资项目代码..."
               />
             </div>
-            <!-- 其它表单同原来 -->
             <div class="form-group">
               <label for="investment-amount">投资金额</label>
               <input
@@ -145,33 +137,10 @@
         </div>
       </div>
       <!-- 右侧 -->
-      <div class="right-panel">
-        <!--        <div class="card performance-chart">-->
-        <!--          <h2>股票历史数据 (代码: 000001)</h2>-->
-        <!--          <div v-if="chartError" class="error">{{ chartError }}</div>-->
-        <!--          <div class="chart-wrapper">-->
-        <!--            <canvas ref="stockChartCanvas"></canvas>-->
-        <!--          </div>-->
-        <!--          <div class="controls-container">-->
-        <!--            <button @click="fetchStockData" :disabled="chartLoading" class="refresh-btn">-->
-        <!--              {{ chartLoading ? '加载中...' : '刷新数据' }}-->
-        <!--            </button>-->
-        <!--            <div class="date-range-container">-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>开始日期: </label>-->
-        <!--                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--              <div class="date-input-group">-->
-        <!--                <label>结束日期: </label>-->
-        <!--                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--          </div>-->
-        <!--        </div>-->
-        <div class="card performance-chart">
+      <div class="dashboard-col right-col">
+        <div class="card performance-chart-card">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
-
             <div class="stock-code-input">
               <input
                   type="text"
@@ -186,39 +155,30 @@
           </div>
           <div v-if="chartError" class="error">{{ chartError }}</div>
           <div ref="echartsContainer" class="chart-wrapper" style="height:350px;width:100%"></div>
-          <div class="controls-container">
-            <button @click="fetchStockData" :disabled="chartLoading || stockCodeError" class="refresh-btn">
-              {{ chartLoading ? '加载中...' : '刷新数据' }}
-            </button>
-            <div class="date-range-container">
-              <div class="date-input-group">
-                <label>开始日期: </label>
-                <input type="date" v-model="chartStartDate" :disabled="chartLoading"/>
-              </div>
-              <div class="date-input-group">
-                <label>结束日期: </label>
-                <input type="date" v-model="chartEndDate" :disabled="chartLoading"/>
-              </div>
-            </div>
-          </div>
         </div>
-
-        <div class="card allocation-chart">
+        <div class="card allocation-chart-card">
           <h2>资产分配</h2>
           <div class="chart-container">
-            <canvas ref="allocationChart"></canvas>
+            <div ref="allocationRoseChart" style="width:100%;height:350px;"></div>
           </div>
         </div>
       </div>
     </div>
+
+
     <!-- 删除确认对话框 -->
     <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal">
-        <h3>确认删除</h3>
-        <p>确定要从投资组合卖出 {{ itemToDelete.investmentName }} ({{ itemToDelete.investmentCode }}) 吗？</p>
+        <h3>是否确认卖出？</h3>
+        <p>
+          确定要从投资组合卖出
+          <span class="highlight">{{ itemToDelete.investmentName }}</span>
+          <span class="highlight">({{ itemToDelete.investmentCode }})</span>
+          吗？
+        </p>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="cancel-btn">取消</button>
-          <button @click="deleteInvestment" class="confirm-btn">确认删除</button>
+          <button @click="deleteInvestment" class="confirm-btn">确认卖出</button>
         </div>
       </div>
     </div>
@@ -231,6 +191,16 @@ import { Chart, registerables } from 'chart.js';
 import * as echarts from 'echarts'; // 新增
 
 Chart.register(...registerables);
+// import {Chart, registerables} from 'chart.js';
+
+// Chart.register(...registerables);
+
+// 放在你的<script>标签最上面，外面，不要放在methods里
+function getCurrentUsername() {
+  return localStorage.getItem('currentUsername') || 'Allen';
+}
+
+
 
 export default {
   name: 'PortfolioManager',
@@ -241,7 +211,7 @@ export default {
       searchQuery: "",
       searchDate: "",
       today: new Date().toISOString().split('T')[0],
-      searchDate: new Date().toISOString().split('T')[0], // 默认今天// 最大可选今天
+      // searchDate: new Date().toISOString().split('T')[0], // 默认今天// 最大可选今天
       allItems: [],  // 全部投资项目
       filteredItems: [],
 
@@ -279,8 +249,8 @@ export default {
       selectedStockName: '平安银行',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
-      // selectedStockCode: '000001',
-      // stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
+      selectedStockCode: '000001',
+      stockCodes: ['000001', '601398', '601939'], // 可自己维护股票代码列表，或通过接口获取
       echartsInstance: null,
       // chartLoading: false,
       // chartError: null,
@@ -330,13 +300,12 @@ export default {
 
   mounted() {
     this.filteredItems = [...this.portfolioItems];
-    this.initAllocationChart();
     this.initEcharts();
     this.fetchStockData();
     this.fetchStockList();
     this.fetchPortfolioItems();
     this.onSearch();
-
+    this.initAllocationRoseChart();
 
 
     window.addEventListener('resize', this.resizeEcharts);
@@ -394,7 +363,10 @@ export default {
     },
     async onSearch() {
       // 1. 拉取全部数据
-      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+      // const username = getCurrentUsername(); // 随时取
+      const username = 'Allen'; // 随时取
+      console.log('当前用户名:', username);
+      const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
 
@@ -424,7 +396,10 @@ export default {
 
     async refreshAndMergePortfolio() {
       // 主动拉取所有数据
-      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+      // const username = getCurrentUsername(); // 随时取
+      const username = 'Allen'; // 随时取
+      console.log('当前用户名:', username);
+      const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
       // 合并同名项目
@@ -432,7 +407,6 @@ export default {
       // 再次根据当前搜索词过滤
       this.filterPortfolio();
     },
-// withDate: 是否把日期加到合并key中
     mergePortfolioItems(items, withDate = false) {
       const map = {};
       items.forEach(item => {
@@ -449,9 +423,7 @@ export default {
         }
       });
       return Object.values(map);
-    }
-,
-
+    },
 
     filterPortfolio() {
       if (!this.searchQuery) {
@@ -467,7 +439,10 @@ export default {
     },
 
     async fetchPortfolioItems() {
-      const resp = await fetch('http://localhost:3000/api/userInfo/?username=Allen');
+      // const username = getCurrentUsername(); // 随时取
+      const username = 'Allen'; // 随时取
+      console.log('当前用户名:', username);
+      const resp = await fetch(`http://localhost:3000/api/userInfo/?username=${username}`);
       let data = await resp.json();
       if (!Array.isArray(data)) data = [data];
       this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
@@ -516,20 +491,12 @@ export default {
       this.$refs['investment-name']?.blur?.();
     },
 
-    // // 用户选中建议后填充
-    // selectSuggestion(item) {
-    //   if (this.newInvestment.type === 'stock') {
-    //     this.newInvestment.name = item.name;
-    //     this.newInvestment.symbol = item.code;
-    //   } else {
-    //     // 基金
-    //     this.newInvestment.name = item.short_name;
-    //     this.newInvestment.symbol = item.fund_code;
-    //   }
-    //   this.nameSuggestions = [];
-    // },
-
     async addInvestment() {
+      // const username = getCurrentUsername(); // 随时取
+      console.log('当前用户名:', username);
+
+      const username = 'Allen'; // 随时取
+      console.log('当前用户名:', username);
       // 这里建议参数补全校验
       const postBody = {
         // name: this.newInvestment.name,
@@ -537,7 +504,7 @@ export default {
         // type: this.newInvestment.type,
         // amount: this.newInvestment.amount,
         // purchaseDate: this.newInvestment.purchaseDate
-        username: "Allen",                                 // 新增，数据库要求
+        username: username,                                 // 新增，数据库要求
         investmentType: this.newInvestment.type,
         investmentName: this.newInvestment.name,
         investmentCode: this.newInvestment.symbol,
@@ -575,8 +542,14 @@ export default {
       this.showDeleteModal = true;
     },
     async deleteInvestment() {
+
       try {
-        const username = this.itemToDelete.username || 'Allen'; // 保险起见
+        // const username = this.itemToDelete.username || 'Allen'; // 保险起见
+        // const username = getCurrentUsername(); // 随时取
+        console.log('当前用户名:', username);
+        const username = 'Allen'; // 随时取
+        console.log('当前用户名:', username);
+
         const code = this.itemToDelete.investmentCode;
         const type = this.itemToDelete.investmentType;
         const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentType=${encodeURIComponent(type)}`;
@@ -724,7 +697,7 @@ export default {
       }
 
       const dates = this.originStockData.map(d => d.date);
-      console.log([...new Set(dates)].length, dates.length); // 看看是否有重复或缺失
+      // console.log([...new Set(dates)].length, dates.length); // 看看是否有重复或缺失
       const prices = this.originStockData.map(d => d.price);
       let min = Math.min(...prices);
       let max = Math.max(...prices);
@@ -765,16 +738,10 @@ export default {
         xAxis: {type: 'category', data: dates, boundaryGap: false},
         yAxis: {type: 'value', min, max, boundaryGap: [0, '100%']},
         dataZoom: [
-          {
-            type: 'inside',
-            start: 0,
-            end: 100
-          },
-          {
-            start: 0,
-            end: 100
-          }
+          { type: 'inside', start: 0, end: 100 },
+          { start: 80, end: 100 }
         ],
+
         series: [
           {
             name: '价格',
@@ -796,69 +763,253 @@ export default {
       };
 
       this.echartsInstance.setOption(option, true);
+
     },
-    // 资产分配图表相关方法
-    initAllocationChart() {
-      const allocationCtx = this.$refs.allocationChart.getContext('2d');
-      this.allocationChart = new Chart(allocationCtx, {
-        type: 'pie',
-        data: this.getAllocationChartData(),
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: '资产类型分配'
-            }
+
+    // ECharts 玫瑰图
+    initAllocationRoseChart() {
+      if (this.roseChartInstance) {
+        this.roseChartInstance.dispose();
+      }
+      this.roseChartInstance = echarts.init(this.$refs.allocationRoseChart);
+      // const username = getCurrentUsername(); // 随时取
+      const username = 'Allen'; // 随时取
+      // console.log('当前用户名:', username);
+      // 拉取数据
+      fetch(`http://localhost:3000/api/userInfo?username=${username}`)
+          .then(res => res.json())
+          .then(data => {
+            // 按类型和名称合并金额
+            const typeMap = {};
+            data.forEach(item => {
+              const key = `${item.investmentType}:${item.investmentName}`;
+              if (!typeMap[key]) {
+                typeMap[key] = 0;
+              }
+              typeMap[key] += Number(item.investmentAmount);
+            });
+            // 转成 ECharts 数据格式
+            const roseData = Object.keys(typeMap).map(key => ({
+              value: typeMap[key],
+              name: key.split(':')[1] // 只展示名称，也可以拼类型
+            }));
+            this.renderAllocationRoseChart(roseData);
+          });
+    },
+    renderAllocationRoseChart(roseData) {
+      const option = {
+        title: {
+          text: '资产分配玫瑰图',
+          left: 'center',
+          top: 20,
+          textStyle: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#2c3e50'
           }
-        }
-      });
+        },
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: '#fff',
+          borderColor: '#cfd8dc',
+          borderWidth: 1,
+          textStyle: {
+            color: '#222',
+            fontSize: 15
+          },
+          padding: 12,
 
-
-    },
-    updateCharts() {
-      this.performanceChart.data = this.getPerformanceChartData();
-      this.performanceChart.update();
-    },
-    updateAllocationChart() {
-      this.allocationChart.data = this.getAllocationChartData();
-      this.allocationChart.update();
-    },
-    getAllocationChartData() {
-      const types = {};
-
-      this.portfolioItems.forEach(item => {
-        if (!types[item.type]) {
-          types[item.type] = 0;
-        }
-        types[item.type] += item.currentValue;
-      });
-
-      const typeNames = Object.keys(types);
-      const backgroundColors = [
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(153, 102, 255, 0.7)'
-      ];
-
-      return {
-        labels: typeNames,
-        datasets: [{
-          data: typeNames.map(type => types[type]),
-          backgroundColor: backgroundColors.slice(0, typeNames.length),
-          borderWidth: 1
-        }]
+          formatter: '{b}: {c} ({d}%)'
+        },
+        toolbox: {
+          show: true,
+          feature: {
+            saveAsImage: { show: true }
+          }
+        },
+        legend: {
+          show: true,
+          top: 'bottom',
+          itemWidth: 18,
+          itemHeight: 10,
+          textStyle: {
+            fontSize: 15,
+            color: '#555'
+          }
+        },
+        series: [
+          {
+            name: '资产分配',
+            type: 'pie',
+            radius: [30, 110],
+            center: ['50%', '50%'],
+            roseType: 'radius',
+            itemStyle: {
+              borderRadius: 9,
+              borderColor: '#fff',
+              borderWidth: 3,
+              shadowColor: 'rgba(32, 80, 190, 0.11)',
+              shadowBlur: 16,
+              shadowOffsetY: 3
+            },
+            label: {
+              fontSize: 16,
+              color: '#222'
+            },
+            labelLine: {
+              length: 24,
+              length2: 16,
+              smooth: true
+            },
+            data: roseData
+          }
+        ]
       };
-    }
+      this.roseChartInstance.setOption(option);
+    },
+
 
   }
 };
 </script>
 
 <style scoped>
+
+.highlight {
+  color: red;     /* 高亮色，也可以用 #ff9800 #2196f3 等 */
+  font-weight: bold;
+  font-size: 17px;
+  padding: 0 2px;
+}
+
+.portfolio-dashboard-root {
+  background: #f5f8fc;
+  min-height: 100vh;
+  padding: 0;
+}
+.dashboard-container {
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  min-height: 1200px; /* 固定高度，可根据需求调整 */
+  box-sizing: border-box;
+  padding: 35px 32px 0 32px;
+}
+
+.dashboard-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  height: 100%;
+  min-width: 0;
+}
+
+/* 统一所有card高度，撑满父div */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);
+  padding: 24px 30px 24px 30px;
+  min-height: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.22s, transform 0.18s;
+  position: relative;
+}
+
+/* 卡片悬浮特效 */
+.card:hover {
+  box-shadow: 0 12px 36px 0 rgba(32, 80, 190, 0.14), 0 8px 24px 0 rgba(52,152,219,0.14);
+  transform: translateY(-2px) scale(1.013);
+  z-index: 2;
+}
+
+/* 卡片底部光晕装饰 */
+.card::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 50%; bottom: -15px;
+  width: 72%; height: 15px;
+  background: radial-gradient(ellipse at center, #7ec8ff2b 0%, transparent 90%);
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0.8;
+  z-index: 1;
+}
+
+.portfolio-list-card, .add-investment-card, .performance-chart-card, .allocation-chart-card {
+  min-height: 500px;
+  max-height: 600px;
+  height: 600px;
+}
+
+.portfolio-list-scroll {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+  margin-top: 8px;
+  /* 自定义滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: #90caf9 #f3f8ff;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+.portfolio-list-scroll::-webkit-scrollbar {
+  width: 8px;
+  background: #f3f8ff;
+  border-radius: 6px;
+}
+.portfolio-list-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #9ad8ff 0%, #63a4ff 90%);
+  border-radius: 6px;
+  min-height: 24px;
+}
+.portfolio-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: #2196f3;
+}
+
+/* 添加投资按钮高光 */
+.add-btn {
+  background: linear-gradient(90deg, #27d5e3 0%, #2ecc71 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  width: 100%;
+  margin-top: 18px;
+  font-weight: 700;
+  box-shadow: 0 3px 14px #2ecc7140;
+  transition: background 0.18s, box-shadow 0.16s, transform 0.14s;
+}
+.add-btn:hover {
+  background: linear-gradient(90deg, #15b6c7 0%, #1ea75a 100%);
+  box-shadow: 0 6px 24px #27d5e333;
+  transform: translateY(-1px) scale(1.03);
+}
+/* 下拉列表悬浮 */
+.suggestion-list li {
+  transition: background 0.18s, color 0.15s;
+}
+.suggestion-list li:hover {
+  background: #e4f3ff;
+  color: #2196f3;
+}
+
+/* 右侧图表自适应高度 */
+.allocation-chart-card .chart-container,
+.performance-chart-card .chart-wrapper {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ...你的其它样式保持原有即可... */
+
 .sell-btn {
   background: linear-gradient(90deg,#2196f3,#1769aa);
   border: none;
@@ -1056,6 +1207,7 @@ export default {
   /* 卡片悬浮效果，可选： */
   will-change: box-shadow, transform;
 }
+
 
 .portfolio-list:hover,
 .add-investment:hover,
