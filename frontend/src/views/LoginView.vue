@@ -54,6 +54,7 @@ const handleLogin = () => {
 
 <style scoped>
 .login-container {
+
   /* 渐变层 + 本地图片背景
   background-image: url('../assets/login.png');  
   background-size: cover;
@@ -95,6 +96,7 @@ const handleLogin = () => {
   position: relative;
   z-index: 2;
   margin-top: 150px;
+
 }
 
 @keyframes fadeInUp {
@@ -118,6 +120,12 @@ const handleLogin = () => {
 
 .form-group {
   margin-bottom: 28px;
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 20px;
   text-align: left;
 }
 
@@ -161,6 +169,32 @@ const handleLogin = () => {
   background-image: linear-gradient(to right, #3498db, #2980b9);
   border: none;
   border-radius: 8px;
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input {
+  width: 95%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-image: linear-gradient(to right, #3498db, #2980b9);
+  border: none;
+  border-radius: 25px;
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -170,11 +204,14 @@ const handleLogin = () => {
   margin-top: 10px;
   letter-spacing: 0.5px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+
 }
 
 .login-btn:hover {
   background-image: linear-gradient(to right, #2980b9, #1c5980);
   transform: translateY(-2px);
+
   box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
 }
 
@@ -185,6 +222,7 @@ const handleLogin = () => {
 .error-message {
   color: #e74c3c;
   margin-top: 20px;
+
   font-size: 14px;
   padding: 10px;
   background-color: rgba(231, 76, 60, 0.1);
@@ -204,5 +242,6 @@ const handleLogin = () => {
       0 0 40px rgba(0, 150, 255, 0.5);
   }
 }
+
 
 </style>

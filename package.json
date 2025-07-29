@@ -18,7 +18,12 @@
   },
   "homepage": "https://github.com/ShailinXia/Portfoilo-Manager-Team-7#readme",
   "dependencies": {
+
+    "axios": "^1.11.0",
+    "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "xlsx": "^0.18.5"
+
   }
 }
