@@ -88,7 +88,14 @@ async function initialize() {
     await importXLSX('./data/stock.xlsx', 'stocks', FIELD_MAPS.stocks);
     await importXLSX('./data/fund.xlsx', 'funds', FIELD_MAPS.funds);
 
-    console.log('✅ 数据库初始化完成 (5个表已创建)');
+    // 添加默认用户投资组合数据
+    await db.runAsync(`INSERT INTO userInfo (username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount) VALUES
+      ('Allen', 'stock', '腾讯控股', '00700', '2023-01-15', 5000),
+      ('Allen', 'stock', '阿里巴巴', 'BABA', '2023-02-20', 3000),
+      ('Allen', 'fund', '易方达蓝筹精选', '005827', '2023-03-10', 10000),
+      ('Allen', 'fund', '华夏回报混合A', '002001', '2023-04-05', 8000)`);
+
+    console.log('✅ 数据库初始化完成 (5个表已创建，已添加默认投资组合数据)');
   } catch (err) {
     try { await db.runAsync('ROLLBACK'); } catch (e) {}
     console.error('❌ 初始化失败:', err);

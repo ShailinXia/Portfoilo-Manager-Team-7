@@ -258,8 +258,8 @@ export default {
       chartError: null,
 
       stocksList: [],
-      selectedStockCode: '000001',
-      selectedStockName: '平安银行',
+      selectedStockCode: '',
+      selectedStockName: '',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
       // selectedStockCode: '000001',
@@ -274,23 +274,35 @@ export default {
   },
   computed: {
     totalValue() {
-      return this.portfolioItems.reduce((sum, item) => sum + item.currentValue, 0);
+      return this.portfolioItems.reduce(
+      (sum, item) => sum + Number(item.investmentAmount || 0), 
+      0
+    );
     },
     totalProfit() {
-      return this.portfolioItems.reduce((sum, item) => sum + item.profit, 0);
+       return this.portfolioItems.reduce(
+      (sum, item) => sum + (Number(item.investmentAmount || 0) * 0.1), 
+      0
+    );
     },
     profitPercentage() {
-      const totalInvested = this.portfolioItems.reduce((sum, item) => sum + item.amount, 0);
-      return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
-    },
+    const totalInvested = this.portfolioItems.reduce(
+      (sum, item) => sum + Number(item.investmentAmount || 0), 
+      0
+    );
+    return totalInvested > 0 
+      ? ((this.totalProfit / totalInvested) * 100).toFixed(2) 
+      : '0.00';
+  },
     dailyChange() {
-      // 模拟每日涨跌 - 实际应用中应从API获取
-      return (Math.random() * 200 - 100).toFixed(2);
-    },
-    dailyChangePercentage() {
-      const dailyChangeValue = parseFloat(this.dailyChange);
-      return dailyChangeValue !== 0 ? ((dailyChangeValue / this.totalValue) * 100).toFixed(2) : 0;
-    },
+    // 简单模拟今日涨跌
+    return (this.totalValue * (Math.random() * 0.1 - 0.05)).toFixed(2);
+  },
+  dailyChangePercentage() {
+    return this.totalValue > 0 
+      ? ((this.dailyChange / this.totalValue) * 100).toFixed(2) 
+      : '0.00';
+  },
     dailyChangeClass() {
       return {
         positive: this.dailyChange >= 0,
@@ -570,6 +582,7 @@ export default {
       try {
         const res = await axios.get('http://localhost:3000/api/stocks');
         this.stocksList = res.data;
+
       } catch (err) {
         this.stocksList = [];
         // 错误处理
@@ -578,17 +591,9 @@ export default {
     updateSelectedStockName() {
       // 用 code 找到 name
       const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
-      console.log(stock)
       this.selectedStockName = stock ? stock.name : '';
-
     },
-    // onSelectStock(code) {
-    //   this.selectedStockCode = code;
-    //   this.updateSelectedStockName();
-    //   // ...拉历史数据
-    //   this.fetchStockData();
-    // },
-    // 实时匹配输入的代码
+
     onStockSearchInput() {
       const keyword = this.stockSearchInput.trim();
       if (!keyword) {
@@ -608,6 +613,23 @@ export default {
       this.stockSearchOptions = [];
       this.fetchStockData(); // 拉取历史数据
     },
+    async fetchStockDetail() {
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.selectedStockName = '';
+        return;
+      }
+      try {
+        const res = await axios.get(`http://localhost:3000/api/stocks/${this.selectedStockCode}/`);
+        if (res.data && res.data.name) {
+          this.selectedStockName = res.data.name;
+        } else {
+          this.selectedStockName = '';
+        }
+      } catch (e) {
+        this.selectedStockName = '';
+      }
+    },
+
     async fetchStockData() {
       // 检查股票代码是否为六位数字
       if (!/^\d{6}$/.test(this.selectedStockCode)) {
@@ -631,8 +653,12 @@ export default {
         // 如果返回的数据为空，则显示无历史数据
         if (!rawData || rawData.length === 0) {
           this.chartError = '无历史数据';
+          this.originStockData = [];
+          this.selectedStockName = '';
           return;
         }
+        // 获取当前股票的名称
+        await this.fetchStockDetail();
 
         // 处理数据
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -652,6 +678,7 @@ export default {
       }
 
       const dates = this.originStockData.map(d => d.date);
+      console.log([...new Set(dates)].length, dates.length); // 看看是否有重复或缺失
       const prices = this.originStockData.map(d => d.price);
       let min = Math.min(...prices);
       let max = Math.max(...prices);
@@ -675,9 +702,13 @@ export default {
           }
         },
         title: {
-          text: `(${this.selectedStockCode})`,
+          text: this.selectedStockName
+              ? `${this.selectedStockName} (${this.selectedStockCode})`
+              : `(${this.selectedStockCode})`,
           left: 'center'
         },
+
+
         toolbox: {
           feature: {
             dataZoom: {yAxisIndex: 'none'},
@@ -1421,8 +1452,18 @@ h2 {
 }
 
 /*.add-investment {*/
-/*  max-width: 430px;*/
-/*  margin: 0 auto;*/
+/*  background: #fff;*/
+/*  border-radius: 16px;*/
+/*  padding: 28px 30px 26px 30px;*/
+/*  box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);*/
+/*  margin-bottom: 28px;*/
+/*  transition: box-shadow 0.18s, transform 0.18s;*/
+/*  width: 100%;*/
+/*  min-width: 240px; !* 最小宽度，防止太窄 *!*/
+/*  max-width: 520px; !* 最大宽度，防止太宽 *!*/
+/*  margin-left: auto;*/
+/*  margin-right: auto;*/
+/*  box-sizing: border-box;*/
 /*}*/
 
 .add-investment form {
@@ -1432,7 +1473,9 @@ h2 {
 .form-group input,
 .form-group select {
   width: 100%;
+  min-width: 0;         /* 允许收缩 */
   box-sizing: border-box;
+  font-size: 16px;
 }
 
 </style>
