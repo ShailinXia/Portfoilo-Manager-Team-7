@@ -32,7 +32,7 @@ router.post("/", (req, res) => {
 
   // 登录成功，返回用户信息（不包括密码）
   const { password: _, ...userInfo } = user;
-  return res.status(200).json({ message: "登陆成功！！！", userInfo});
+  return res.json({ message: "登陆成功！！！", success:true, userInfo});
 });
 
 module.exports = router;
