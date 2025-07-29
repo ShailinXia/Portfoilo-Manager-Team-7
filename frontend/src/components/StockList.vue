@@ -10,17 +10,15 @@
     </div>
 
     <div class="stock-grid">
-      <div v-for="stock in filteredStocks" :key="stock.code" class="stock-card">
+      <div v-for="stock in pagedStocks" :key="stock.code" class="stock-card">
         <div class="stock-header">
           <h3>{{ stock.name }}</h3>
           <span class="stock-code">{{ stock.code }}</span>
         </div>
 
-        <!-- //BUG: 延时渲染 -->
         <div class="stock-price" v-if="stock.change_percent != null">
           <span class="price">¥{{ stock.latest_price.toFixed(2) }}</span>
           <span class="change" :class="{ 'up': stock.change_percent >= 0, 'down': stock.change_percent < 0 }">
-            <!-- //FIXME: Security Code Bug: stock.change_percent >= 0 ? -->
             {{ stock.change_percent >= 0 ? '+' : '' }}{{ stock.change_percent.toFixed(2) }}%
           </span>
         </div>
@@ -45,6 +43,24 @@
         </div>
       </div>
     </div>
+    
+    <div class="pagination-controls">
+      <button 
+        @click="prevPage"
+        :disabled="currentPage <= 1"
+        class="page-btn"
+      >上一页</button>
+      
+      <span class="page-info">
+        第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
+      </span>
+      
+      <button 
+        @click="nextPage"
+        :disabled="currentPage >= totalPages"
+        class="page-btn"
+      >下一页</button>
+    </div>
   </div>
 </template>
 
@@ -55,25 +71,46 @@ export default {
   name: 'StockList',
   data() {
     return {
-      stocks: [],
-      filteredStocks: [],
+      currentPage: 1,
+      pageSize: 9, // 每页显示9条
+      totalItems: 0,
+      allStocks: [],    // 存储所有股票数据
+      filteredStocks: [], // 存储过滤后的股票
+      pagedStocks: [],  // 存储当前页显示的股票
       searchQuery: '',
       loading: false,
       error: null,
     };
   },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.filteredStocks.length / this.pageSize);
+    }
+  },
+  watch: {
+    // 当搜索词或页码变化时更新分页
+    searchQuery() {
+      this.currentPage = 1;
+      this.filterStocks();
+    },
+    currentPage() {
+      this.updatePagedStocks();
+    }
+  },
   async created() {
-    await this.fetchStocks();
+    await this.fetchAllStocks();
   },
   methods: {
-    async fetchStocks(page = 1) {
+    async fetchAllStocks() {
       this.loading = true;
       this.error = null;
       try {
-        //TODO: Adjust the URL to match your backend API endpoint
-        const response = await axios.get(`http://localhost:3000/api/stocks?page=100&limit=10`);
-        this.stocks = response.data;
-        this.filteredStocks = [...this.stocks];
+        // 获取所有股票数据
+        const response = await axios.get('http://localhost:3000/api/stocks?exchange=ASHARE');
+        this.allStocks = response.data;
+        this.filteredStocks = [...this.allStocks];
+        this.totalItems = this.filteredStocks.length;
+        this.updatePagedStocks();
       } catch (err) {
         console.error('获取股票数据失败:', err);
         this.error = '获取股票数据失败，请稍后重试';
@@ -81,17 +118,37 @@ export default {
         this.loading = false;
       }
     },
+    
     filterStocks() {
       if (!this.searchQuery) {
-        this.filteredStocks = [...this.stocks];
-        return;
+        this.filteredStocks = [...this.allStocks];
+      } else {
+        const query = this.searchQuery.toLowerCase();
+        this.filteredStocks = this.allStocks.filter(stock => 
+          stock.name.toLowerCase().includes(query) || 
+          stock.code.toLowerCase().includes(query)
+        );
       }
-
-      const query = this.searchQuery.toLowerCase();
-      this.filteredStocks = this.stocks.filter(stock =>
-        stock.name.toLowerCase().includes(query) ||
-        stock.code.includes(query)
-      );
+      this.totalItems = this.filteredStocks.length;
+      this.updatePagedStocks();
+    },
+    
+    updatePagedStocks() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      this.pagedStocks = this.filteredStocks.slice(start, end);
+    },
+    
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
     }
   }
 };
@@ -134,6 +191,33 @@ h1 {
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
+}
+
+.pagination-controls {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  align-items: center;
+}
+
+.page-btn {
+  padding: 8px 20px;
+  border: 1px solid #2c3e50;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: #666;
+  font-size: 14px;
 }
 
 .stock-grid {

@@ -274,23 +274,35 @@ export default {
   },
   computed: {
     totalValue() {
-      return this.portfolioItems.reduce((sum, item) => sum + item.currentValue, 0);
+      return this.portfolioItems.reduce(
+      (sum, item) => sum + Number(item.investmentAmount || 0), 
+      0
+    );
     },
     totalProfit() {
-      return this.portfolioItems.reduce((sum, item) => sum + item.profit, 0);
+       return this.portfolioItems.reduce(
+      (sum, item) => sum + (Number(item.investmentAmount || 0) * 0.1), 
+      0
+    );
     },
     profitPercentage() {
-      const totalInvested = this.portfolioItems.reduce((sum, item) => sum + item.amount, 0);
-      return totalInvested > 0 ? ((this.totalProfit / totalInvested) * 100).toFixed(2) : 0;
-    },
+    const totalInvested = this.portfolioItems.reduce(
+      (sum, item) => sum + Number(item.investmentAmount || 0), 
+      0
+    );
+    return totalInvested > 0 
+      ? ((this.totalProfit / totalInvested) * 100).toFixed(2) 
+      : '0.00';
+  },
     dailyChange() {
-      // 模拟每日涨跌 - 实际应用中应从API获取
-      return (Math.random() * 200 - 100).toFixed(2);
-    },
-    dailyChangePercentage() {
-      const dailyChangeValue = parseFloat(this.dailyChange);
-      return dailyChangeValue !== 0 ? ((dailyChangeValue / this.totalValue) * 100).toFixed(2) : 0;
-    },
+    // 简单模拟今日涨跌
+    return (this.totalValue * (Math.random() * 0.1 - 0.05)).toFixed(2);
+  },
+  dailyChangePercentage() {
+    return this.totalValue > 0 
+      ? ((this.dailyChange / this.totalValue) * 100).toFixed(2) 
+      : '0.00';
+  },
     dailyChangeClass() {
       return {
         positive: this.dailyChange >= 0,
@@ -1440,8 +1452,18 @@ h2 {
 }
 
 /*.add-investment {*/
-/*  max-width: 430px;*/
-/*  margin: 0 auto;*/
+/*  background: #fff;*/
+/*  border-radius: 16px;*/
+/*  padding: 28px 30px 26px 30px;*/
+/*  box-shadow: 0 4px 24px rgba(41, 57, 77, 0.08), 0 1.5px 7px rgba(52, 152, 219, 0.07);*/
+/*  margin-bottom: 28px;*/
+/*  transition: box-shadow 0.18s, transform 0.18s;*/
+/*  width: 100%;*/
+/*  min-width: 240px; !* 最小宽度，防止太窄 *!*/
+/*  max-width: 520px; !* 最大宽度，防止太宽 *!*/
+/*  margin-left: auto;*/
+/*  margin-right: auto;*/
+/*  box-sizing: border-box;*/
 /*}*/
 
 .add-investment form {
@@ -1451,7 +1473,9 @@ h2 {
 .form-group input,
 .form-group select {
   width: 100%;
+  min-width: 0;         /* 允许收缩 */
   box-sizing: border-box;
+  font-size: 16px;
 }
 
 </style>
