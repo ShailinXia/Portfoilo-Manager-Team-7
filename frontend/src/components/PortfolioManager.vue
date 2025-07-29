@@ -258,7 +258,7 @@ export default {
       chartError: null,
 
       stocksList: [],
-      selectedStockCode: '000001',
+      selectedStockCode: '',
       selectedStockName: '',
       stockSearchInput: '',  // 用户输入
       stockSearchOptions: [],
@@ -570,6 +570,7 @@ export default {
       try {
         const res = await axios.get('http://localhost:3000/api/stocks');
         this.stocksList = res.data;
+
       } catch (err) {
         this.stocksList = [];
         // 错误处理
@@ -578,17 +579,9 @@ export default {
     updateSelectedStockName() {
       // 用 code 找到 name
       const stock = this.stocksList.find(s => s.code === this.selectedStockCode);
-      console.log(stock)
       this.selectedStockName = stock ? stock.name : '';
-
     },
-    // onSelectStock(code) {
-    //   this.selectedStockCode = code;
-    //   this.updateSelectedStockName();
-    //   // ...拉历史数据
-    //   this.fetchStockData();
-    // },
-    // 实时匹配输入的代码
+
     onStockSearchInput() {
       const keyword = this.stockSearchInput.trim();
       if (!keyword) {
@@ -608,6 +601,23 @@ export default {
       this.stockSearchOptions = [];
       this.fetchStockData(); // 拉取历史数据
     },
+    async fetchStockDetail() {
+      if (!/^\d{6}$/.test(this.selectedStockCode)) {
+        this.selectedStockName = '';
+        return;
+      }
+      try {
+        const res = await axios.get(`http://localhost:3000/api/stocks/${this.selectedStockCode}/`);
+        if (res.data && res.data.name) {
+          this.selectedStockName = res.data.name;
+        } else {
+          this.selectedStockName = '';
+        }
+      } catch (e) {
+        this.selectedStockName = '';
+      }
+    },
+
     async fetchStockData() {
       // 检查股票代码是否为六位数字
       if (!/^\d{6}$/.test(this.selectedStockCode)) {
@@ -631,8 +641,12 @@ export default {
         // 如果返回的数据为空，则显示无历史数据
         if (!rawData || rawData.length === 0) {
           this.chartError = '无历史数据';
+          this.originStockData = [];
+          this.selectedStockName = '';
           return;
         }
+        // 获取当前股票的名称
+        await this.fetchStockDetail();
 
         // 处理数据
         rawData = rawData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -652,6 +666,7 @@ export default {
       }
 
       const dates = this.originStockData.map(d => d.date);
+      console.log([...new Set(dates)].length, dates.length); // 看看是否有重复或缺失
       const prices = this.originStockData.map(d => d.price);
       let min = Math.min(...prices);
       let max = Math.max(...prices);
@@ -675,9 +690,13 @@ export default {
           }
         },
         title: {
-          text: `(${this.selectedStockCode})`,
+          text: this.selectedStockName
+              ? `${this.selectedStockName} (${this.selectedStockCode})`
+              : `(${this.selectedStockCode})`,
           left: 'center'
         },
+
+
         toolbox: {
           feature: {
             dataZoom: {yAxisIndex: 'none'},
