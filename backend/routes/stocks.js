@@ -6,7 +6,7 @@ const router = express.Router();
 router.get("/", (req, res) => {
   const {
     page = 1,
-    limit = 10,
+    limit = 50,
     sort = "market_cap",
     order = "desc",
   } = req.query;

@@ -12,6 +12,7 @@ router.get("/", (req, res) => {
   // 查询用户信息
   const userInfo = db
     .prepare("SELECT * FROM userInfo WHERE username = ?")
+    // .get(username);
     .all(username);
 
   if (userInfo) {
@@ -109,22 +110,24 @@ router.put("/", (req, res) => {
   }
 });
 
-// 删除用户信息
+// 删除用户所有同类投资记录
 router.delete("/", (req, res) => {
-  const { username, investmentCode } = req.query;
-  // 删除用户信息
+  const { username, investmentCode, investmentType } = req.query;
+  if (!username || !investmentCode || !investmentType) {
+    return res.status(400).json({ message: "缺少参数" });
+  }
   const deleteUser = db
-    .prepare("DELETE FROM userInfo WHERE username = ? AND investmentCode = ?")
-    .run(username, investmentCode);
+      .prepare(
+          "DELETE FROM userInfo WHERE username = ? AND investmentCode = ? AND investmentType = ?"
+      )
+      .run(username, investmentCode, investmentType);
   if (deleteUser.changes > 0) {
-    res.json({
-      message: `${username}的${investmentCode}投资删除成功`,
-      data: deleteUser,
-    });
+    res.json({ success: true, message: "信息删除成功" });
   } else {
     res.status(404).json({ message: "用户信息未找到" });
   }
 });
+
 
 // 查询该用户的投资组合
 router.get("/portfolio", (req, res) => {

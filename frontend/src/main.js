@@ -5,9 +5,9 @@ import router from './router';
 import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables)
 
-createApp(App).mount('#app')
-const app = createApp(App);
-app.use(router);
-app.mount('#app');
+// const app = createApp(App)
+// app.use(router) // 挂载路由
+// app.mount('#app')
 
+createApp(App).use(router).mount('#app')
 

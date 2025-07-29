@@ -4,7 +4,7 @@ const router = express.Router();
 
 // 获取所有基金列表，支持分页、类型筛选、规模/涨跌幅排序
 router.get('/', (req, res) => {
-  const { page = 1, limit = 20, type, sort = 'fund_size', order = 'desc' } = req.query;
+  const { page = 1, limit = 50, type, sort = 'fund_size', order = 'desc' } = req.query;
   const offset = (page - 1) * limit;
 
   let sql = 'SELECT * FROM funds';
