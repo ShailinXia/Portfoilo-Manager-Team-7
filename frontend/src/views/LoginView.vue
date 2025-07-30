@@ -5,23 +5,11 @@
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="username">用户名</label>
-          <input
-              type="text"
-              id="username"
-              v-model="username"
-              placeholder="请输入用户名"
-              required
-          />
+          <input type="text" id="username" v-model="username" placeholder="请输入用户名" required />
         </div>
         <div class="form-group">
           <label for="password">密码</label>
-          <input
-              type="password"
-              id="password"
-              v-model="password"
-              placeholder="请输入密码"
-              required
-          />
+          <input type="password" id="password" v-model="password" placeholder="请输入密码" required />
         </div>
         <button type="submit" class="login-btn">登录</button>
       </form>
@@ -49,6 +37,7 @@ const handleLogin = async () => {
     localStorage.setItem('isAuthenticated', 'true');
     localStorage.setItem('currentUsername', 'admin');
     emit('login-success');
+    router.push('/portfolio');
     return;
   }
 
@@ -67,6 +56,7 @@ const handleLogin = async () => {
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('currentUsername', username.value);
       emit('login-success');
+      router.push('/portfolio');
     } else {
       error.value = result.message || '用户名或密码错误';
     }
@@ -103,26 +93,35 @@ const handleLogin = async () => {
   flex-direction: column;
   justify-content: center;
   backdrop-filter: blur(15px);
-  border: 1.5px solid rgba(255,255,255,0.20);
+  border: 1.5px solid rgba(255, 255, 255, 0.20);
   box-shadow: 0 6px 40px rgba(0, 44, 98, 0.23), 0 0 30px rgba(20, 150, 255, 0.09);
   position: relative;
   z-index: 2;
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(40px);}
-  to   { opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes glow {
   from {
     box-shadow:
-        0 0 16px rgba(255,255,255,0.18),
-        0 0 40px rgba(0,150,255,0.20);
+      0 0 16px rgba(255, 255, 255, 0.18),
+      0 0 40px rgba(0, 150, 255, 0.20);
   }
+
   to {
     box-shadow:
-        0 0 28px rgba(255,255,255,0.28),
-        0 0 55px rgba(0,150,255,0.35);
+      0 0 28px rgba(255, 255, 255, 0.28),
+      0 0 55px rgba(0, 150, 255, 0.35);
   }
 }
 
@@ -133,7 +132,7 @@ const handleLogin = async () => {
   letter-spacing: 1px;
   margin-bottom: 38px;
   font-size: 28px;
-  text-shadow: 0 2px 12px rgba(52,152,219,0.18), 0 1px 2px rgba(0,0,0,0.18);
+  text-shadow: 0 2px 12px rgba(52, 152, 219, 0.18), 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .form-group {
@@ -148,26 +147,26 @@ const handleLogin = async () => {
   margin-bottom: 7px;
   display: block;
   letter-spacing: .5px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.23);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.23);
 }
 
 .form-group input {
   width: 100%;
   padding: 12px 18px;
-  border: 1.5px solid rgba(255,255,255,0.28);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
   font-size: 17px;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
   color: #20242d;
   font-family: inherit;
   transition: border-color 0.28s, background 0.28s;
   box-sizing: border-box;
   font-weight: 500;
-  box-shadow: 0 2px 6px rgba(0,44,98,0.07);
+  box-shadow: 0 2px 6px rgba(0, 44, 98, 0.07);
 }
 
 .form-group input::placeholder {
-  color: rgba(170,190,230,0.65);
+  color: rgba(170, 190, 230, 0.65);
   font-size: 15px;
   font-weight: 400;
 }
@@ -190,17 +189,17 @@ const handleLogin = async () => {
   font-size: 18px;
   font-weight: 700;
   transition: background .22s, box-shadow .22s, transform .14s;
-  box-shadow: 0 4px 18px rgba(41,128,185,0.15), 0 1.5px 1.5px rgba(255,255,255,0.08);
+  box-shadow: 0 4px 18px rgba(41, 128, 185, 0.15), 0 1.5px 1.5px rgba(255, 255, 255, 0.08);
   cursor: pointer;
   margin-top: 18px;
   letter-spacing: .8px;
-  text-shadow: 0 2px 4px rgba(44,62,80,.14);
+  text-shadow: 0 2px 4px rgba(44, 62, 80, .14);
 }
 
 .login-btn:hover {
   background-image: linear-gradient(90deg, #2380c4 0%, #1a567d 100%);
   transform: translateY(-1.5px) scale(1.01);
-  box-shadow: 0 8px 24px rgba(41,128,185,0.28), 0 1.5px 1.5px rgba(255,255,255,0.10);
+  box-shadow: 0 8px 24px rgba(41, 128, 185, 0.28), 0 1.5px 1.5px rgba(255, 255, 255, 0.10);
 }
 
 .login-btn:active {
@@ -216,7 +215,7 @@ const handleLogin = async () => {
   border-radius: 6px;
   border-left: 4px solid #e74c3c;
   padding: 12px 16px;
-  box-shadow: 0 2px 12px rgba(231,76,60,0.10);
+  box-shadow: 0 2px 12px rgba(231, 76, 60, 0.10);
   text-align: left;
 }
 </style>

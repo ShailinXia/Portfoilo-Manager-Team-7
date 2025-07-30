@@ -1,10 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from "vue-router";
 
 // import LoginView from '../views/LoginView.vue';
 // import App from '../App.vue';
-import PortfolioManager from '../components/PortfolioManager.vue';
-import StockList from '../components/StockList.vue';
-import LoginView from '../views/LoginView.vue';
+import FundList from "../components/FundList.vue";
+import PortfolioManager from "../components/PortfolioManager.vue";
+import StockList from "../components/StockList.vue";
+import LoginView from "../views/LoginView.vue";
 
 // const routes = [
 //     {
@@ -26,24 +27,30 @@ import LoginView from '../views/LoginView.vue';
 //     }
 // ];
 const routes = [
-    { path: '/', component: LoginView },
-    { path: '/portfolio', component: PortfolioManager },
-    { path: '/stocks', component: StockList }
-]
+  { path: "/login", component: LoginView },
+  {
+    path: "/portfolio",
+    component: PortfolioManager,
+    meta: { requiresAuth: true },
+  },
+  { path: "/stocks", component: StockList, meta: { requiresAuth: true } },
+  { path: "/funds", component: FundList, meta: { requiresAuth: true } },
+  { path: "/", redirect: "/login" },
+];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes
+  history: createWebHistory(),
+  routes,
 });
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (to.meta.requiresAuth && !isAuthenticated) {
-        next('/');
-    } else {
-        next();
-    }
+  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next("/");
+  } else {
+    next();
+  }
 });
 
 export default router;

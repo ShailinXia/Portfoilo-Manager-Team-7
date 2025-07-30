@@ -1,8 +1,5 @@
 <script setup>
-
 import { onMounted, ref } from 'vue';
-import PortfolioManager from './components/PortfolioManager.vue';
-import StockList from './components/StockList.vue';
 import LoginView from './views/LoginView.vue';
 
 const isAuthenticated = ref(false);
@@ -22,7 +19,6 @@ const checkAuthStatus = () => {
 const handleLogout = () => {
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('currentUsername');
-
   isAuthenticated.value = false;
   activeTab.value = 'portfolio'; // 重置选项卡
 };
@@ -37,18 +33,27 @@ const handleLogout = () => {
     <div class="sidebar">
       <h2>投资管理系统</h2>
       <nav>
-        <button
-            @click="activeTab = 'portfolio'"
-            :class="{ active: activeTab === 'portfolio' }"
+        <router-link
+          to="/portfolio"
+          class="nav-link"
+          :class="{ active: $route.path === '/portfolio' }"
         >
           投资组合
-        </button>
-        <button
-            @click="activeTab = 'stocks'"
-            :class="{ active: activeTab === 'stocks' }"
+        </router-link>
+        <router-link
+          to="/stocks"
+          class="nav-link"
+          :class="{ active: $route.path === '/stocks' }"
         >
           股票行情
-        </button>
+        </router-link>
+        <router-link
+          to="/funds"
+          class="nav-link"
+          :class="{ active: $route.path === '/funds' }"
+        >
+          基金行情
+        </router-link>
         <button class="logout-btn" @click="handleLogout">
           <span class="logout-icon">→</span> 退出登录
         </button>
@@ -56,8 +61,9 @@ const handleLogout = () => {
     </div>
 
     <div class="main-content">
-      <PortfolioManager v-if="activeTab === 'portfolio'"/>
-      <StockList v-if="activeTab === 'stocks'"/>
+      <!-- <PortfolioManager v-if="activeTab === 'portfolio'"/>
+      <StockList v-if="activeTab === 'stocks'"/> -->
+      <router-view />
     </div>
   </div>
 </template>
@@ -84,7 +90,8 @@ body {
   top: 0;
   left: 0;
   height: 100vh;
-  z-index: 20; /* 保证在内容上层 */
+  z-index: 20;
+  /* 保证在内容上层 */
 }
 
 .sidebar h2 {
@@ -133,7 +140,8 @@ body {
   flex: 1;
   padding: 20px;
   background-color: #f5f7fa;
-  margin-left: 220px; /* 新增：给主内容加左侧外边距，避免被sidebar覆盖 */
+  margin-left: 220px;
+  /* 新增：给主内容加左侧外边距，避免被sidebar覆盖 */
 }
 
 /* 响应式设计 */
@@ -141,10 +149,12 @@ body {
   .app-container {
     flex-direction: column;
   }
+
   .main-content {
     margin-left: 0 !important;
     padding: 0px;
   }
+
   .sidebar {
     position: static !important;
     width: 100%;
@@ -171,7 +181,8 @@ body {
 
 /* 保持原有样式不变，添加以下样式 */
 .logout-btn {
-  margin-top: auto; /* 使退出按钮位于底部 */
+  margin-top: auto;
+  /* 使退出按钮位于底部 */
   background-color: rgba(231, 76, 60, 0.1) !important;
   color: #e74c3c !important;
   display: flex;
@@ -198,5 +209,39 @@ body {
   }
 }
 
+.nav-link {
+  display: block;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: #ecf0f1;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+  font-size: 16px;
+}
 
+.nav-link:hover {
+  background-color: #34495e;
+}
+
+.nav-link.active {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+/* 响应式处理 */
+@media (max-width: 768px) {
+  .sidebar nav {
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: center;
+    flex: 1;
+  }
+}
 </style>
