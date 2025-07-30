@@ -4,6 +4,8 @@ import { onMounted, ref } from 'vue';
 import PortfolioManager from './components/PortfolioManager.vue';
 import StockList from './components/StockList.vue';
 import LoginView from './views/LoginView.vue';
+import FundList from './components/FundList.vue'; // 路径请根据实际调整
+
 
 const isAuthenticated = ref(false);
 const activeTab = ref('portfolio');
@@ -63,6 +65,13 @@ const handleLogout = () => {
           <i class="icon-project-diagram"></i>
           <span style="font-size: 18px;">股票行情</span>
         </button>
+        <button
+            @click="activeTab = 'funds'"
+            :class="{ active: activeTab === 'funds' }"
+        >
+          <i class="icon-project-diagram"></i>
+          <span style="font-size: 18px;">基金行情</span>
+        </button>
       </nav>
 
       <!-- 侧边栏底部 -->
@@ -77,6 +86,8 @@ const handleLogout = () => {
     <div class="main-content">
       <PortfolioManager v-if="activeTab === 'portfolio'"/>
       <StockList v-if="activeTab === 'stocks'"/>
+      <FundList v-if="activeTab === 'funds'" />
+
     </div>
   </div>
 </template>

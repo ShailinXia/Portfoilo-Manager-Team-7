@@ -19,7 +19,7 @@
           <h3>总收益</h3>
           <p class="value" :class="{ positive: totalProfit >= 0, negative: totalProfit < 0 }">
             {{ formatCurrency(totalProfit) }}
-            ({{ profitPercentage >= 0 ? '+' : '' }}{{ profitPercentage }}%)          </p>
+            ({{ profitPercentage >= 0 ? '+' : '' }}{{ profitPercentage }}%) </p>
         </div>
         <div class="summary-card">
           <h3>持仓数量</h3>
@@ -139,16 +139,6 @@
                   required
               />
             </div>
-
-            <!--            <div class="form-group">-->
-            <!--              <label for="investment-date">购买日期</label>-->
-            <!--              <input-->
-            <!--                  type="date"-->
-            <!--                  id="investment-date"-->
-            <!--                  v-model="newInvestment.purchaseDate"-->
-            <!--                  required-->
-            <!--              />-->
-            <!--            </div>-->
             <button type="submit" class="add-btn">添加到组合</button>
           </form>
         </div>
@@ -157,7 +147,7 @@
       <div class="dashboard-col right-col">
         <div class="card performance-chart-card">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-<!--            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>-->
+            <!--            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>-->
 
             <h2>股票历史数据</h2>
             <div class="stock-code-row">
@@ -169,7 +159,7 @@
                   maxlength="6"
                   class="custom-input"
               />
-<!--              <span v-if="stockCodeError" class="error-text-inline">{{ stockCodeError }}</span>-->
+              <!--              <span v-if="stockCodeError" class="error-text-inline">{{ stockCodeError }}</span>-->
               <div v-if="chartError" class="error">{{ chartError }}</div>
 
             </div>
@@ -188,22 +178,43 @@
     </div>
 
 
-    <!-- 删除确认对话框 -->
+    <!-- 卖出弹窗 -->
     <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal">
-        <h3>是否确认卖出？</h3>
+        <h3>卖出投资</h3>
         <p>
-          确定要从投资组合卖出
-          <span class="highlight">{{ itemToDelete.investmentName }}</span>
-          <span class="highlight">({{ itemToDelete.investmentCode }})</span>
+          确定要卖出
+          <span class="highlight">{{ itemToDelete?.investmentName }}</span>
+          <span class="highlight">({{ itemToDelete?.investmentCode }})</span>
           吗？
         </p>
+        <div class="modal-info">
+          <div>
+            可用数量：{{ Math.floor(itemToDelete.investmentAmount / latestSellPrice) || 0 }}
+          </div>
+          <div>当前价格：<b>{{ latestSellPriceDisplay }}</b></div>
+        </div>
+        <div class="modal-form">
+          <label>卖出数量：</label>
+          <input type="number"
+                 v-model.number="sellAmount"
+                 :max="itemToDelete?.investmentAmount || 0"
+                 min="1"
+                 :placeholder="'最多' + (itemToDelete?.investmentAmount || 0)"
+                 style="width: 80px;"
+          />
+          <span v-if="sellAmountError" style="color:red">{{ sellAmountError }}</span>
+        </div>
+        <div class="modal-info" v-if="sellAmount > 0">
+          卖出总金额：<b style="color: #27ae60">{{ sellTotalDisplay }}</b>
+        </div>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="cancel-btn">取消</button>
-          <button @click="deleteInvestment" class="confirm-btn">确认卖出</button>
+          <button @click="confirmSell" class="confirm-btn">确认卖出</button>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -233,6 +244,12 @@ export default {
       // searchDate: new Date().toISOString().split('T')[0], // 默认今天// 最大可选今天
       allItems: [],  // 全部投资项目
       filteredItems: [],
+
+      showDeleteModal: false,
+      itemToDelete: null,
+      sellAmount: 0,
+      latestSellPrice: null,
+      sellAmountError: '',
 
       latestPrice: null,
       investmentTypes: [
@@ -280,6 +297,15 @@ export default {
     };
   },
   computed: {
+
+    latestSellPriceDisplay() {
+      return this.latestSellPrice === null ? '--' : '¥' + Number(this.latestSellPrice).toFixed(2);
+    },
+    sellTotalDisplay() {
+      if (!this.latestSellPrice || !this.sellAmount) return '--';
+      return '¥' + (Number(this.latestSellPrice) * Number(this.sellAmount)).toFixed(2);
+    },
+
     totalValuePlusProfit() {
       // totalValue 是当前市值，totalProfit 是“今日浮动收益”
       // 你想“当前价值 + 今日收益”其实就是 totalValue + totalProfit
@@ -369,6 +395,79 @@ export default {
   },
 
   methods: {
+
+    async confirmSell() {
+      if (!this.sellAmount || this.sellAmount <= 0) {
+        this.sellAmountError = '请输入有效的卖出数量';
+        return;
+      }
+      if (this.sellAmount > this.itemToDelete.investmentAmount) {
+        this.sellAmountError = '卖出数量不能超过可用数量';
+        return;
+      }
+      if (!this.latestSellPrice) {
+        this.sellAmountError = '当前价格获取失败';
+        return;
+      }
+      this.sellAmountError = '';
+
+      const remainAmount = this.itemToDelete.investmentAmount - (this.sellAmount * this.latestSellPrice);
+      const username = getCurrentUsername();
+
+      // 1. 先删
+      let url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(this.itemToDelete.investmentCode)}&investmentType=${encodeURIComponent(this.itemToDelete.investmentType)}`;
+      try {
+        await fetch(url, {method: 'DELETE'});
+
+        // 2. 剩余有持仓则重新添加
+        if (remainAmount > 0) {
+          const postBody = {
+            username,
+            investmentType: this.itemToDelete.investmentType,
+            investmentName: this.itemToDelete.investmentName,
+            investmentCode: this.itemToDelete.investmentCode,
+            investmentAmount: remainAmount,
+            investmentDate: this.itemToDelete.investmentDate
+          };
+          await fetch('http://localhost:3000/api/userInfo/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(postBody)
+          });
+        }
+
+        alert('卖出成功');
+        this.showDeleteModal = false;
+        this.itemToDelete = null;
+        setTimeout(async () => {
+          await this.fetchPortfolioItems();
+          this.initAllocationRoseChart();
+          await this.fetchDailyChangePercentage();
+        }, 200);
+      } catch (err) {
+        alert('卖出失败：' + err.message);
+      }
+    },
+// 弹窗打开时调用
+    async confirmDelete(item) {
+      this.itemToDelete = item;
+      this.sellAmount = '';
+      this.sellAmountError = '';
+      this.showDeleteModal = true;
+      // 拉取价格（股票/基金分开）
+      if (item.investmentType === 'stock') {
+        const res = await fetch(`http://localhost:3000/api/stocks/${item.investmentCode}/`);
+        const data = await res.json();
+        // console.log('接口返回数据：', data);
+
+        this.latestSellPrice = data.latest_price || null;
+      } else if (item.investmentType === 'fund') {
+        const res = await fetch(`http://localhost:3000/api/funds/${item.investmentCode}/`);
+        const data = await res.json();
+        this.latestSellPrice = data.latest_net_value || null;
+      }
+    },
+
 
     // 新增：创建比特币漂浮效果
     createBitcoinEffect() {
@@ -635,7 +734,7 @@ export default {
       }
     },
     async updateLatestPrice() {
-      const { type, symbol } = this.newInvestment;
+      const {type, symbol} = this.newInvestment;
       if (!type || !symbol) {
         this.latestPrice = null;
         return;
@@ -712,40 +811,40 @@ export default {
       }
     },
 
-    confirmDelete(item) {
-      this.itemToDelete = item;
-      this.showDeleteModal = true;
-    },
-    async deleteInvestment() {
-
-      try {
-        // const username = this.itemToDelete.username || 'Allen'; // 保险起见
-        const username = getCurrentUsername(); // 随时取
-        // console.log('当前用户名:', username);
-        // const username = 'Allen'; // 随时取
-        console.log('当前用户名:', username);
-
-        const code = this.itemToDelete.investmentCode;
-        const type = this.itemToDelete.investmentType;
-        const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentType=${encodeURIComponent(type)}`;
-        const resp = await fetch(url, {
-          method: 'DELETE'
-        });
-        const result = await resp.json();
-        if (result.success || (result.message && result.message.includes('成功'))) {
-          await this.onSearch(); // 刷新
-          this.showDeleteModal = false;
-          this.itemToDelete = null;
-          this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
-          await this.fetchDailyChangePercentage();  // 新增
-
-        } else {
-          alert('删除失败：' + (result.message || '未知错误'));
-        }
-      } catch (err) {
-        alert('删除失败：' + err.message);
-      }
-    },
+    // confirmDelete(item) {
+    //   this.itemToDelete = item;
+    //   this.showDeleteModal = true;
+    // },
+    // async deleteInvestment() {
+    //
+    //   try {
+    //     // const username = this.itemToDelete.username || 'Allen'; // 保险起见
+    //     const username = getCurrentUsername(); // 随时取
+    //     // console.log('当前用户名:', username);
+    //     // const username = 'Allen'; // 随时取
+    //     console.log('当前用户名:', username);
+    //
+    //     const code = this.itemToDelete.investmentCode;
+    //     const type = this.itemToDelete.investmentType;
+    //     const url = `http://localhost:3000/api/userInfo?username=${encodeURIComponent(username)}&investmentCode=${encodeURIComponent(code)}&investmentType=${encodeURIComponent(type)}`;
+    //     const resp = await fetch(url, {
+    //       method: 'DELETE'
+    //     });
+    //     const result = await resp.json();
+    //     if (result.success || (result.message && result.message.includes('成功'))) {
+    //       await this.onSearch(); // 刷新
+    //       this.showDeleteModal = false;
+    //       this.itemToDelete = null;
+    //       this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
+    //       await this.fetchDailyChangePercentage();  // 新增
+    //
+    //     } else {
+    //       alert('删除失败：' + (result.message || '未知错误'));
+    //     }
+    //   } catch (err) {
+    //     alert('删除失败：' + err.message);
+    //   }
+    // },
 
     initEcharts() {
       if (this.echartsInstance) return;

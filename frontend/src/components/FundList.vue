@@ -1,44 +1,38 @@
 <template>
-  <div class="stock-list">
-    <h1>中国A股大盘股数据</h1>
+  <div class="fund-list">
+    <h1>中国主要基金行情</h1>
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
     <div class="search-bar">
-      <input type="text" v-model="searchQuery" placeholder="搜索股票名称或代码..." @input="filterStocks" />
+      <input type="text" v-model="searchQuery" placeholder="搜索基金名称或代码..." @input="filterFunds" />
     </div>
 
-    <div class="stock-grid">
-      <div v-for="stock in pagedStocks" :key="stock.code" class="stock-card">
-        <div class="stock-header">
-          <h3>{{ stock.name }}</h3>
-          <span class="stock-code">{{ stock.code }}</span>
+    <div class="fund-grid">
+      <div v-for="fund in pagedFunds" :key="fund.code" class="fund-card">
+        <div class="fund-header">
+          <h3>{{ fund.name }}</h3>
+          <span class="fund-code">{{ fund.code }}</span>
         </div>
-
-        <div class="stock-price" v-if="stock.change_percent != null">
-          <span class="price">¥{{ stock.latest_price.toFixed(2) }}</span>
-          <span class="change" :class="{ 'up': stock.change_percent >= 0, 'down': stock.change_percent < 0 }">
-            {{ stock.change_percent >= 0 ? '+' : '' }}{{ stock.change_percent.toFixed(2) }}%
+        <div class="fund-price" v-if="fund.change_percent != null">
+          <span class="price">净值 ¥{{ fund.latest_net_value.toFixed(4) }}</span>
+          <span class="change" :class="{ 'up': fund.change_percent >= 0, 'down': fund.change_percent < 0 }">
+            {{ fund.change_percent >= 0 ? '+' : '' }}{{ fund.change_percent.toFixed(2) }}%
           </span>
         </div>
-
-        <div class="stock-details">
+        <div class="fund-details">
           <div class="detail">
-            <span class="label">市值:</span>
-            <span class="value">{{ stock.market_cap }}</span>
+            <span class="label">规模:</span>
+            <span class="value">{{ fund.fund_size || '--' }}</span>
           </div>
           <div class="detail">
-            <span class="label">市盈率:</span>
-            <span class="value">{{ stock.pe_ratio }}</span>
+            <span class="label">基金经理:</span>
+            <span class="value">{{ fund.managers || '--' }}</span>
           </div>
-          <div class="detail">
-            <span class="label">市净率:</span>
-            <span class="value">{{ stock.pb_ratio }}</span>
-          </div>
-          <div class="detail">
-            <span class="label">换手率:</span>
-            <span class="value">{{ stock.turnover_rate }}%</span>
+          <div class="detail" v-if="fund.industries">
+            <span class="label">行业分布:</span>
+            <span class="value">{{ fund.industries }}</span>
           </div>
         </div>
       </div>
@@ -46,17 +40,13 @@
 
     <div class="pagination-controls">
       <button @click="prevPage" :disabled="currentPage <= 1" class="page-btn">上一页</button>
-
       <span class="page-info">
         第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
       </span>
-
       <div class="jump-to-page">
-        <input type="number" v-model.number="jumpPage" min="1" :max="totalPages" @keydown.enter="goToPage"
-          placeholder="页码" />
+        <input type="number" v-model.number="jumpPage" min="1" :max="totalPages" @keydown.enter="goToPage" placeholder="页码" />
         <button @click="goToPage" class="page-btn">跳转</button>
       </div>
-
       <button @click="nextPage" :disabled="currentPage >= totalPages" class="page-btn">下一页</button>
     </div>
   </div>
@@ -66,68 +56,82 @@
 import axios from 'axios';
 
 export default {
-  name: 'StockList',
+  name: 'FundList',
   data() {
     return {
-      currentPage: 1,
-      pageSize: 15,
-      totalItems: 5422,
-      pagedStocks: [], // 当前页显示的股票（由后端返回）
+      allFunds: [],
+      pagedFunds: [],
       searchQuery: '',
       loading: false,
       error: null,
-      jumpPage: null, // 跳转页码输入
+      pageSize: 12,
+      currentPage: 1,
+      jumpPage: null,
+      totalPages: 1,
     };
+  },
+  async created() {
+    await this.fetchFunds();
   },
   watch: {
     searchQuery() {
       this.currentPage = 1;
-      this.fetchStocks();
+      this.filterFunds();
     },
     currentPage() {
-      this.fetchStocks();
+      this.updatePagedFunds();
     }
   },
-  async created() {
-    await this.fetchStocks();
-  },
   methods: {
-    async fetchStocks() {
+    async fetchFunds() {
       this.loading = true;
       this.error = null;
       try {
-        const params = {
-          page: this.currentPage,
-          pageSize: this.pageSize,
-        };
-        const response = await axios.get('http://localhost:3000/api/stocks', { params });
-
-        // 假设后端返回格式为：{ data: [...], total: 123 }
-        this.pagedStocks = response.data;
-        this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+        const response = await axios.get('http://localhost:3000/api/funds/');
+        this.allFunds = response.data;
+        this.totalPages = Math.ceil(this.allFunds.length / this.pageSize);
+        this.updatePagedFunds();
       } catch (err) {
-        console.error('获取股票数据失败:', err);
-        this.error = '获取股票数据失败，请稍后重试';
+        this.error = '获取基金数据失败，请稍后重试';
       } finally {
         this.loading = false;
       }
     },
-
+    filterFunds() {
+      let filtered = this.allFunds;
+      if (this.searchQuery.trim()) {
+        const keyword = this.searchQuery.trim().toLowerCase();
+        filtered = filtered.filter(f =>
+            (f.name && f.name.toLowerCase().includes(keyword)) ||
+            (f.code && f.code.toLowerCase().includes(keyword))
+        );
+      }
+      this.totalPages = Math.ceil(filtered.length / this.pageSize);
+      this.currentPage = 1;
+      this.updatePagedFunds(filtered);
+    },
+    updatePagedFunds(list) {
+      const funds = list || this.filteredFunds || this.allFunds;
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      this.pagedFunds = funds.slice(start, end);
+    },
     prevPage() {
       if (this.currentPage > 1) {
         this.currentPage--;
+        this.updatePagedFunds();
       }
     },
-
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
+        this.updatePagedFunds();
       }
     },
-    // 跳转到指定页码
     goToPage() {
       if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
         this.currentPage = this.jumpPage;
+        this.updatePagedFunds();
       } else {
         alert(`请输入 1 到 ${this.totalPages} 之间的页码`);
       }
@@ -137,7 +141,7 @@ export default {
 </script>
 
 <style scoped>
-.stock-list {
+.fund-list {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -166,7 +170,6 @@ h1 {
 .search-bar {
   margin-bottom: 20px;
 }
-
 .search-bar input {
   width: 100%;
   padding: 10px 15px;
@@ -179,17 +182,15 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 居中对齐 */
   gap: 10px;
-  flex-wrap: nowrap;
-  /* 不换行，防止“下一页”掉下来 */
   margin-top: 20px;
 }
 
 .page-btn {
   padding: 6px 12px;
   background-color: #fff;
-  border: 1px solid #333;
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
   border-radius: 4px;
   cursor: pointer;
 }
@@ -203,52 +204,45 @@ h1 {
 .page-info {
   margin: 0 10px;
 }
-
 .jump-to-page {
   display: flex;
   align-items: center;
   gap: 5px;
 }
-
 .jump-to-page input {
   width: 40px;
   padding: 6px 12px;
-  flex-wrap: nowrap;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-.stock-grid {
+.fund-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
 }
-
-.stock-card {
+.fund-card {
   background: white;
   border-radius: 8px;
   padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.09);
   transition: transform 0.2s;
 }
-
-.stock-card:hover {
+.fund-card:hover {
   transform: translateY(-5px);
 }
 
-.stock-header {
+.fund-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
 }
-
-.stock-header h3 {
+.fund-header h3 {
   margin: 0;
   color: #333;
 }
-
-.stock-code {
+.fund-code {
   background: #f5f5f5;
   padding: 3px 8px;
   border-radius: 4px;
@@ -256,49 +250,42 @@ h1 {
   color: #666;
 }
 
-.stock-price {
+.fund-price {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
-
 .price {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: 8px;
 }
-
 .change {
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 14px;
 }
-
 .up {
   background-color: #e8f5e9;
   color: #2e7d32;
 }
-
 .down {
   background-color: #ffebee;
   color: #c62828;
 }
 
-.stock-details {
+.fund-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
-
 .detail {
   display: flex;
   justify-content: space-between;
 }
-
 .label {
   color: #666;
 }
-
 .value {
   font-weight: 500;
 }
