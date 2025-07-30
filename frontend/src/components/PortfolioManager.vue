@@ -159,7 +159,7 @@
         <div class="card allocation-chart-card">
           <h2>资产分配</h2>
           <div class="chart-container">
-            <div ref="allocationRoseChart" style="width:100%;height:350px;"></div>
+            <div ref="allocationRoseChart" style="width:100%;height:380px;"></div>
           </div>
         </div>
       </div>
@@ -525,6 +525,8 @@ export default {
             amount: '',
             purchaseDate: new Date().toISOString().split('T')[0]
           };
+          this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
+
         } else {
           alert("添加有误：" + (result.message || "请检查数据"));
         }
@@ -557,6 +559,8 @@ export default {
           await this.onSearch(); // 刷新
           this.showDeleteModal = false;
           this.itemToDelete = null;
+          this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
+
         } else {
           alert('删除失败：' + (result.message || '未知错误'));
         }
@@ -795,7 +799,7 @@ export default {
     renderAllocationRoseChart(roseData) {
       const option = {
         title: {
-          text: '资产分配玫瑰图',
+          // text: '资产分配玫瑰图',
           left: 'center',
           top: 20,
           textStyle: {
@@ -825,6 +829,8 @@ export default {
         },
         legend: {
           show: true,
+          type: 'scroll',        // 支持滚动
+
           top: 'bottom',
           itemWidth: 18,
           itemHeight: 10,
@@ -850,8 +856,11 @@ export default {
             },
             label: {
               fontSize: 16,
-              color: '#222'
+              color: '#222',
+              overflow: 'truncate',  // 防止超长
             },
+            minAngle: 5,             // 防止过小的区块挤在一起
+            avoidLabelOverlap: true, // 自动优化重叠
             labelLine: {
               length: 24,
               length2: 16,
