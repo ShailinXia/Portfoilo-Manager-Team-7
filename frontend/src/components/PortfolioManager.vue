@@ -49,13 +49,13 @@
             <button @click="onSearch">搜索</button>
           </div>
           <!-- 投资组合滚动区 -->
-          <div class="portfolio-list-scroll">
-            <ul class="investment-items">
-              <li
-                  v-for="item in filteredItems"
+          <div class="portfolio-list-scroll"
+               @mouseenter="pauseScroll"
+               @mouseleave="resumeScroll">
+            <ul class="investment-items" :style="scrollStyle">
+              <li v-for="item in filteredItems"
                   :key="item.investmentName + '_' + item.investmentCode + '_' + item.investmentType"
-                  class="investment-row"
-              >
+                  class="investment-row">
                 <div class="item-info">
                   <div class="item-title">{{ item.investmentName }}</div>
                   <div class="item-sub">
@@ -237,6 +237,11 @@ export default {
       portfolioItems: [],
       dailyChangePercentage: '',   // 今日涨跌率，字符串，默认空
 
+      scrollIndex: 0,
+      scrollTimer: null,
+      itemHeight: 72, // 每项高度，px（可调整为你的li实际高度）
+      autoScrollEnabled: true,
+
       searchQuery: "",
       searchDate: "",
       today: new Date().toISOString().split('T')[0],
@@ -296,6 +301,14 @@ export default {
     };
   },
   computed: {
+
+    scrollStyle() {
+      // 动画平滑，向上偏移
+      return {
+        transform: `translateY(-${this.scrollIndex * this.itemHeight}px)`,
+        transition: 'transform 0.5s cubic-bezier(.55,0,.1,1)'
+      }
+    },
 
     maxSellableAmount() {
       // 防止价格为0出错
@@ -369,6 +382,8 @@ export default {
 
     window.addEventListener('resize', this.resizeEcharts);
   },
+
+
   beforeUnmount() {
     this.destroyEcharts();
     window.removeEventListener('resize', this.resizeEcharts);

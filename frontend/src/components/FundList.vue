@@ -16,7 +16,7 @@
           <span class="fund-code">{{ fund.code }}</span>
         </div>
         <div class="fund-price" v-if="fund.change_percent != null">
-          <span class="price">净值 ¥{{ fund.latest_net_value.toFixed(4) }}</span>
+          <span class="price"> ¥{{ fund.latest_net_value.toFixed(4) }}</span>
           <span class="change" :class="{ 'up': fund.change_percent >= 0, 'down': fund.change_percent < 0 }">
             {{ fund.change_percent >= 0 ? '+' : '' }}{{ fund.change_percent.toFixed(2) }}%
           </span>
@@ -241,6 +241,7 @@ h1 {
 .fund-header h3 {
   margin: 0;
   color: #333;
+  font-size: 20px;
 }
 .fund-code {
   background: #f5f5f5;
@@ -253,10 +254,11 @@ h1 {
 .fund-price {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
 }
+
 .price {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   margin-right: 8px;
 }
