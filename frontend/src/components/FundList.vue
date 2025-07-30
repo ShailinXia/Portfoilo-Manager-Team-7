@@ -17,7 +17,7 @@
         </div>
 
         <div class="fund-price" v-if="fund.change_percent != null">
-          <span class="price">¥{{ fund.latest_price.toFixed(2) }}</span>
+          <span class="price">¥{{ fund.latest_net_value.toFixed(2) }}</span>
           <span class="change" :class="{ 'up': fund.change_percent >= 0, 'down': fund.change_percent < 0 }">
             {{ fund.change_percent >= 0 ? '+' : '' }}{{ fund.change_percent.toFixed(2) }}%
           </span>
@@ -26,20 +26,20 @@
         <div class="fund-details">
           <div class="detail">
             <span class="label">市值:</span>
-            <span class="value">{{ fund.market_cap }}</span>
+            <span class="value">{{ fund.fund_size }}</span>
           </div>
-          <div class="detail">
+          <!-- <div class="detail">
             <span class="label">市盈率:</span>
             <span class="value">{{ fund.pe_ratio }}</span>
-          </div>
+          </div> -->
           <div class="detail">
-            <span class="label">市净率:</span>
-            <span class="value">{{ fund.pb_ratio }}</span>
+            <span class="label">管理者:</span>
+            <span class="value">{{ fund.managers }}</span>
           </div>
-          <div class="detail">
+          <!-- <div class="detail">
             <span class="label">换手率:</span>
             <span class="value">{{ fund.turnover_rate }}%</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
@@ -339,13 +339,12 @@ h1 {
 }
 
 .up {
-  background-color: #e8f5e9;
+  background-color: #ffebee;
   color: #c62828;
 }
 
 .down {
-  background-color: #ffebee;
-
+  background-color: #e8f5e9;
   color: #2e7d32;
 }
 

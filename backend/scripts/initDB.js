@@ -93,6 +93,7 @@ async function initialize() {
 
     await importXLSX("./data/stock.xlsx", "stocks", FIELD_MAPS.stocks);
     await importXLSX("./data/fund.xlsx", "funds", FIELD_MAPS.funds);
+    console.log("已成功读取数据");
 
     // 添加默认用户投资组合数据
     await db.runAsync(`INSERT INTO userInfo (username, investmentType, investmentName, investmentCode, investmentDate, investmentAmount) VALUES

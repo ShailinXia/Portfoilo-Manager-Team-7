@@ -10,7 +10,7 @@ function simulateFundNetValue() {
   const funds = db.prepare('SELECT code, latest_net_value FROM funds').all();
   funds.forEach(fund => {
     // 随机波动 ±1%
-    const changePercent = (Math.random() * 2 - 1).toFixed(2); // -1% ~ +1%
+    const changePercent = (Math.random() * 4 - 2).toFixed(2); // -1% ~ +1%
     const newNetValue = +(fund.latest_net_value * (1 + changePercent / 100)).toFixed(4);
 
     // 更新最新净值
@@ -28,6 +28,6 @@ function simulateFundNetValue() {
 }
 
 // 每分钟模拟一次
-setInterval(simulateFundNetValue, 10 * 1000);
+setInterval(simulateFundNetValue, 15 * 1000);
 
 module.exports = { simulateFundNetValue };

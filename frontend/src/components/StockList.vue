@@ -340,12 +340,12 @@ h1 {
 }
 
 .up {
-  background-color: #e8f5e9;
+  background-color: #ffebee;
   color: #c62828;
 }
 
 .down {
-  background-color: #ffebee;
+  background-color: #e8f5e9;
   color: #2e7d32;
 }
 
