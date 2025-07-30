@@ -180,37 +180,36 @@
 
     <!-- 卖出弹窗 -->
     <div v-if="showDeleteModal" class="modal-overlay">
-      <div class="modal">
-        <h3>卖出投资</h3>
-        <p>
+      <div class="modal sell-modal">
+        <h3><i class="icon-warning"></i> 卖出投资</h3>
+        <p class="modal-title">
           确定要卖出
           <span class="highlight">{{ itemToDelete?.investmentName }}</span>
           <span class="highlight">({{ itemToDelete?.investmentCode }})</span>
           吗？
         </p>
-        <div class="modal-info">
-          <div>
-            可用数量：{{ Math.floor(itemToDelete.investmentAmount / latestSellPrice) || 0 }}
-          </div>
-          <div>当前价格：<b>{{ latestSellPriceDisplay }}</b></div>
+        <div class="modal-info-list">
+          <div><span class="label">可用数量：</span><span class="value">{{ maxSellableAmount }}</span></div>
+          <div><span class="label">当前价格：</span><span class="value">{{ latestSellPriceDisplay }}</span></div>
         </div>
         <div class="modal-form">
           <label>卖出数量：</label>
           <input type="number"
                  v-model.number="sellAmount"
-                 :max="itemToDelete?.investmentAmount || 0"
+                 :max="maxSellableAmount"
                  min="1"
-                 :placeholder="'最多' + (itemToDelete?.investmentAmount || 0)"
+                 :placeholder="'最多' + maxSellableAmount"
                  style="width: 80px;"
+                 @input="onSellAmountInput"
           />
-          <span v-if="sellAmountError" style="color:red">{{ sellAmountError }}</span>
+          <span v-if="sellAmountError" class="error-tip">{{ sellAmountError }}</span>
         </div>
         <div class="modal-info" v-if="sellAmount > 0">
           卖出总金额：<b style="color: #27ae60">{{ sellTotalDisplay }}</b>
         </div>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="cancel-btn">取消</button>
-          <button @click="confirmSell" class="confirm-btn">确认卖出</button>
+          <button @click="confirmSell" class="confirm-btn" :disabled="sellAmount < 1 || sellAmount > maxSellableAmount">确认卖出</button>
         </div>
       </div>
     </div>
@@ -298,6 +297,12 @@ export default {
   },
   computed: {
 
+    maxSellableAmount() {
+      // 防止价格为0出错
+      if (!this.latestSellPrice || this.latestSellPrice <= 0) return 0;
+      // 只能卖出整数份
+      return Math.floor(this.itemToDelete?.investmentAmount / this.latestSellPrice) || 0;
+    },
     latestSellPriceDisplay() {
       return this.latestSellPrice === null ? '--' : '¥' + Number(this.latestSellPrice).toFixed(2);
     },
@@ -395,6 +400,17 @@ export default {
   },
 
   methods: {
+
+    onSellAmountInput() {
+      // 自动修正超限
+      if (this.sellAmount > this.maxSellableAmount) {
+        this.sellAmount = this.maxSellableAmount;
+      }
+      if (this.sellAmount < 1) {
+        this.sellAmount = 1;
+      }
+    },
+
 
     async confirmSell() {
       if (!this.sellAmount || this.sellAmount <= 0) {
@@ -1198,6 +1214,96 @@ export default {
 </style>
 
 <style scoped>
+
+.modal.sell-modal {
+  min-width: 350px;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.14);
+  background: #fff;
+  padding: 32px 30px 24px 30px;
+}
+.modal-title {
+  font-size: 18px;
+  margin: 0 0 16px 0;
+  color: #222;
+}
+.modal-info-list {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.modal-info-list .label {
+  color: #999;
+}
+.modal-info-list .value {
+  font-weight: 500;
+  color: #555;
+}
+.modal-form {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-form label {
+  color: #555;
+  font-size: 16px;
+}
+input[type="number"] {
+  border: 1px solid #d0d7e3;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+input[type="number"]:focus {
+  border-color: #6c63ff;
+}
+.error-tip {
+  color: #e74c3c;
+  margin-left: 8px;
+  font-size: 13px;
+}
+.highlight {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 17px;
+}
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+.cancel-btn, .confirm-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 20px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cancel-btn {
+  background: #f2f3f5;
+  color: #666;
+}
+.confirm-btn {
+  background: #e74c3c;
+  color: #fff;
+}
+.confirm-btn:disabled {
+  background: #eee;
+  color: #bbb;
+  cursor: not-allowed;
+}
+.icon-warning {
+  color: #e67e22;
+  font-size: 20px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
 
 .stock-code-row {
   display: flex;
