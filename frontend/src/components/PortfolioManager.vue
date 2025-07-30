@@ -762,7 +762,11 @@ export default {
         ]
       };
 
-      this.echartsInstance.setOption(option, true);
+      this.$nextTick(() => {
+        this.echartsInstance.setOption(option, true);
+        this.echartsInstance.resize();
+      });
+
 
     },
 
