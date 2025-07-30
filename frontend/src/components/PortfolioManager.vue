@@ -1,5 +1,7 @@
 <template>
-  <div class="portfolio-manager">
+  <div class="portfolio-manager relative">
+    <!-- 1. 比特币漂浮容器：放在根元素最前面 -->
+    <div class="bitcoin-container pointer-events-none absolute inset-0 z-0"></div>
     <div class="header">
       <h1>投资组合管理</h1>
       <div class="portfolio-summary">
@@ -301,13 +303,14 @@ export default {
   },
 
   mounted() {
+    // 页面加载完成后初始化漂浮效果
+    this.createBitcoinEffect();
     this.filteredItems = [...this.portfolioItems];
     this.initAllocationChart();
     this.initEcharts();
     this.fetchStockData();
     this.fetchStockList();
     this.fetchPortfolioItems();
-
 
     window.addEventListener('resize', this.resizeEcharts);
   },
@@ -337,6 +340,52 @@ export default {
   },
 
   methods: {
+    // 新增：创建比特币漂浮效果
+    createBitcoinEffect() {
+      const container = this.$el.querySelector('.bitcoin-container');
+      if (!container) return;
+      
+      const numberOfBitcoins = 50; // 调整数量
+      
+      for (let i = 0; i < numberOfBitcoins; i++) {
+          // 创建SVG元素
+            const bitcoin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            bitcoin.setAttribute('viewBox', '0 0 1024 1024'); // 使用原SVG的viewBox
+            bitcoin.setAttribute('width', '50'); // 调整为需要的显示大小
+            bitcoin.setAttribute('height', '50');
+            bitcoin.classList.add('bitcoin-icon');
+
+            // 创建路径并设置新的路径数据和样式
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M316.32 649.12c-1.12 4.64-1.76 7.36-8.16 5.76l-72.96-18.24-18.72 75.2 134.56 33.6-27.2 109.28 71.84 17.92 27.2-109.28 44.64 11.2-27.2 109.12 68.32 17.12 27.36-109.28 51.36 12.96c34.24 8.48 164 10.08 192-103.36a140.16 140.16 0 0 0-65.12-161.6s80-24.48 91.2-97.76-39.84-107.36-69.44-126.08a352 352 0 0 0-73.76-32l28.48-114.24-65.76-16-28.16 113.6-52.8-13.12 28.8-114.08-66.56-16-28.48 114.08-139.2-34.72-16.96 67.2 76.32 19.04c7.68 1.92 6.72 5.76 6.08 8.32zM526.88 321.6L608 341.92c13.92 3.52 78.72 32 64 89.44a68 68 0 0 1-71.2 52.8 96 96 0 0 1-19.68-2.08l-89.44-22.4z m-51.36 210.08l126.72 32a69.6 69.6 0 0 1 48 88.96c-11.36 45.76-56.32 55.84-78.56 55.84a38.24 38.24 0 0 1-9.76-0.96l-122.4-30.4z');
+            path.setAttribute('fill', 'rgba(247, 147, 26, 0.5)'); // 保持淡橙色
+            path.setAttribute('stroke', 'rgba(247, 147, 26, 0.8)'); // 保持描边
+            path.setAttribute('stroke-width', '0.5');
+            bitcoin.appendChild(path);
+            container.appendChild(bitcoin);
+
+            // 随机设置位置和动画参数
+            const startX = Math.random() * 100; // 水平起始位置（0%-100%）
+            const animationDelay = Math.random() * 15; // 动画延迟（0-15秒）
+            const duration = 20 + Math.random() * 20; // 动画持续时间（20-40秒）
+            const floatX = (Math.random() - 0.5) * 50; // 水平漂移范围（-25%到25%）
+            const floatRotate = (Math.random() - 0.5) * 360; // 旋转范围（-180°到180°）
+            const size = 1.5 + Math.random() * 2.5; // 图标大小（1.5em-4em）
+            const opacity = 0.4 + Math.random() * 0.6; // 不透明度（0.4-1）
+
+            // 应用样式
+            bitcoin.style.left = `${startX}%`;
+            bitcoin.style.top = '-10%'; // 从屏幕顶部外开始
+            bitcoin.style.animationDelay = `${animationDelay}s`;
+            bitcoin.style.animationDuration = `${duration}s`;
+            bitcoin.style.setProperty('--float-x', `${floatX}vw`); // 水平漂移变量
+            bitcoin.style.setProperty('--float-rotate', `${floatRotate}deg`); // 旋转变量
+            bitcoin.style.fontSize = `${size}em`;
+            bitcoin.style.opacity = opacity;
+            bitcoin.style.color = '#f7931a'; // 比特币橙黄色
+          }
+    },
+  
     formatCurrency(value) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -875,6 +924,44 @@ export default {
 };
 </script>
 
+<style>
+/* 比特币动画样式放在非scoped的style中 */
+.bitcoin-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bitcoin-icon {
+  position: absolute;
+  font-size: 2em;
+  color: rgba(247, 147, 26, 0.5); /* 稍微提高透明度，更明显 */
+  animation: float 10s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8; /* 提高显示时的透明度 */
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh) translateX(var(--float-x)) rotate(var(--float-rotate));
+    opacity: 0;
+  }
+}
+</style>
+
 <style scoped>
 
 .suggestion-list {
@@ -901,6 +988,7 @@ export default {
 }
 
 .portfolio-manager {
+  position: relative;
   font-family: 'Arial', sans-serif;
   /*max-width: 1200px;*/
   margin: 0 auto;
