@@ -1,26 +1,33 @@
 <template>
-  <div class="portfolio-manager">
+  <div class="portfolio-manager relative">
+    <!-- 1. 比特币漂浮容器：放在根元素最前面 -->
+    <div class="bitcoin-container pointer-events-none absolute inset-0 z-0"></div>
     <div class="header">
       <h1>投资组合管理 Portfolio Management</h1>
       <div class="portfolio-summary">
         <div class="summary-card">
-          <h3>总价值</h3>
+          <h3>当前投资总金额</h3>
           <p class="value">{{ formatCurrency(totalValue) }}</p>
+        </div>
+
+        <div class="summary-card">
+          <h3>当前持仓总价值</h3>
+          <p class="value">{{ formatCurrency(totalValuePlusProfit) }}</p>
         </div>
 
         <div class="summary-card">
           <h3>总收益</h3>
           <p class="value" :class="{ positive: totalProfit >= 0, negative: totalProfit < 0 }">
-            {{ formatCurrency(totalProfit) }} ({{ profitPercentage }}%)
-          </p>
+            {{ formatCurrency(totalProfit) }}
+            ({{ profitPercentage >= 0 ? '+' : '' }}{{ profitPercentage }}%)          </p>
         </div>
         <div class="summary-card">
           <h3>持仓数量</h3>
           <p class="value">{{ portfolioItems.length }}</p>
         </div>
         <div class="summary-card">
-          <h3>今日涨跌</h3>
-          <p class="value"> {{ formatCurrency(dailyChange) }} ({{ dailyChangePercentage }}%)</p>
+          <h3>当前涨跌率</h3>
+          <p class="value">{{ dailyChangePercentage }}%</p>
         </div>
       </div>
     </div>
@@ -113,25 +120,35 @@
               />
             </div>
             <div class="form-group">
-              <label for="investment-amount">投资金额</label>
+              <label>当前{{ newInvestment.type === 'stock' ? '股价' : '净值' }}：</label>
+              <input
+                  type="text"
+                  :value="latestPrice !== null ? latestPrice : '--'"
+                  readonly
+                  style="background:#f8f8f8;color:#22334d;"
+              />
+            </div>
+            <div class="form-group">
+              <label for="investment-amount">买入股数</label>
               <input
                   type="number"
                   id="investment-amount"
                   v-model="newInvestment.amount"
-                  min="0"
+                  min="1"
                   step="1"
                   required
               />
             </div>
-            <div class="form-group">
-              <label for="investment-date">购买日期</label>
-              <input
-                  type="date"
-                  id="investment-date"
-                  v-model="newInvestment.purchaseDate"
-                  required
-              />
-            </div>
+
+            <!--            <div class="form-group">-->
+            <!--              <label for="investment-date">购买日期</label>-->
+            <!--              <input-->
+            <!--                  type="date"-->
+            <!--                  id="investment-date"-->
+            <!--                  v-model="newInvestment.purchaseDate"-->
+            <!--                  required-->
+            <!--              />-->
+            <!--            </div>-->
             <button type="submit" class="add-btn">添加到组合</button>
           </form>
         </div>
@@ -140,8 +157,10 @@
       <div class="dashboard-col right-col">
         <div class="card performance-chart-card">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>
-            <div class="stock-code-input">
+<!--            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>-->
+
+            <h2>股票历史数据</h2>
+            <div class="stock-code-row">
               <input
                   type="text"
                   v-model="selectedStockCode"
@@ -150,10 +169,13 @@
                   maxlength="6"
                   class="custom-input"
               />
-              <span v-if="stockCodeError" class="error-text">{{ stockCodeError }}</span>
+<!--              <span v-if="stockCodeError" class="error-text-inline">{{ stockCodeError }}</span>-->
+              <div v-if="chartError" class="error">{{ chartError }}</div>
+
             </div>
+
+
           </div>
-          <div v-if="chartError" class="error">{{ chartError }}</div>
           <div ref="echartsContainer" class="chart-wrapper" style="height:350px;width:100%"></div>
         </div>
         <div class="card allocation-chart-card">
@@ -203,6 +225,7 @@ export default {
   data() {
     return {
       portfolioItems: [],
+      dailyChangePercentage: '',   // 今日涨跌率，字符串，默认空
 
       searchQuery: "",
       searchDate: "",
@@ -211,6 +234,7 @@ export default {
       allItems: [],  // 全部投资项目
       filteredItems: [],
 
+      latestPrice: null,
       investmentTypes: [
         {value: 'stock', label: '股票'},
         {value: 'fund', label: '基金'}
@@ -256,36 +280,41 @@ export default {
     };
   },
   computed: {
+    totalValuePlusProfit() {
+      // totalValue 是当前市值，totalProfit 是“今日浮动收益”
+      // 你想“当前价值 + 今日收益”其实就是 totalValue + totalProfit
+      // 实际上 totalValue 已经是包含了浮动的当前市值，理论上不需要再加一次 totalProfit
+      // 但如果你就是想这么显示，代码如下
+      return this.totalValue + this.totalProfit;
+    },
+
+
     totalValue() {
       return this.portfolioItems.reduce(
-      (sum, item) => sum + Number(item.investmentAmount || 0), 
-      0
-    );
+          (sum, item) => sum + Number(item.investmentAmount || 0),
+          0
+      );
     },
+    // 总收益 = 总价值 × 今日涨跌率
     totalProfit() {
-       return this.portfolioItems.reduce(
-      (sum, item) => sum + (Number(item.investmentAmount || 0) * 0.1), 
-      0
-    );
+      // dailyChangePercentage 是字符串类型，注意转为小数
+      const percent = Number(this.dailyChangePercentage);
+      // 允许 dailyChangePercentage 为 -1.30 或 0.56 等
+      return this.totalValue * (isNaN(percent) ? 0 : percent / 100);
     },
+    // 收益百分比 = 总收益 ÷ 总价值
     profitPercentage() {
-    const totalInvested = this.portfolioItems.reduce(
-      (sum, item) => sum + Number(item.investmentAmount || 0), 
-      0
-    );
-    return totalInvested > 0 
-      ? ((this.totalProfit / totalInvested) * 100).toFixed(2) 
-      : '0.00';
-  },
-    dailyChange() {
-    // 简单模拟今日涨跌
-    return (this.totalValue * (Math.random() * 0.1 - 0.05)).toFixed(2);
-  },
-  dailyChangePercentage() {
-    return this.totalValue > 0 
-      ? ((this.dailyChange / this.totalValue) * 100).toFixed(2) 
-      : '0.00';
-  },
+      if (this.totalValue > 0) {
+        return ((this.totalProfit / this.totalValue) * 100).toFixed(2);
+      }
+      return '0.00';
+    },
+
+    // dailyChangePercentage() {
+    //   return this.totalValue > 0
+    //       ? ((this.dailyChange / this.totalValue) * 100).toFixed(2)
+    //       : '0.00';
+    // },
     dailyChangeClass() {
       return {
         positive: this.dailyChange >= 0,
@@ -295,6 +324,8 @@ export default {
   },
 
   mounted() {
+
+    this.createBitcoinEffect();
     this.filteredItems = [...this.portfolioItems];
     this.initEcharts();
     this.fetchStockData();
@@ -302,6 +333,7 @@ export default {
     this.fetchPortfolioItems();
     this.onSearch();
     this.initAllocationRoseChart();
+    this.fetchDailyChangePercentage(); // 新增，初始化涨跌率
 
 
     window.addEventListener('resize', this.resizeEcharts);
@@ -312,6 +344,7 @@ export default {
   },
 
   watch: {
+
     selectedStockCode: 'fetchStockData',
     chartStartDate: 'fetchStockData',
     chartEndDate: 'fetchStockData',
@@ -327,11 +360,102 @@ export default {
         this.newInvestment.name = '';
         this.newInvestment.symbol = '';
         this.nameSuggestions = [];
+        this.latestPrice = null;
+
       }
-    }
+    },
+    // 下面新增对symbol监听
+    'newInvestment.symbol': 'updateLatestPrice',
   },
 
   methods: {
+
+    // 新增：创建比特币漂浮效果
+    createBitcoinEffect() {
+      const container = this.$el.querySelector('.bitcoin-container');
+      if (!container) return;
+
+      const numberOfBitcoins = 50; // 调整数量
+
+      for (let i = 0; i < numberOfBitcoins; i++) {
+        // 创建SVG元素
+        const bitcoin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        bitcoin.setAttribute('viewBox', '0 0 1024 1024'); // 使用原SVG的viewBox
+        bitcoin.setAttribute('width', '50'); // 调整为需要的显示大小
+        bitcoin.setAttribute('height', '50');
+        bitcoin.classList.add('bitcoin-icon');
+
+        // 创建路径并设置新的路径数据和样式
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M316.32 649.12c-1.12 4.64-1.76 7.36-8.16 5.76l-72.96-18.24-18.72 75.2 134.56 33.6-27.2 109.28 71.84 17.92 27.2-109.28 44.64 11.2-27.2 109.12 68.32 17.12 27.36-109.28 51.36 12.96c34.24 8.48 164 10.08 192-103.36a140.16 140.16 0 0 0-65.12-161.6s80-24.48 91.2-97.76-39.84-107.36-69.44-126.08a352 352 0 0 0-73.76-32l28.48-114.24-65.76-16-28.16 113.6-52.8-13.12 28.8-114.08-66.56-16-28.48 114.08-139.2-34.72-16.96 67.2 76.32 19.04c7.68 1.92 6.72 5.76 6.08 8.32zM526.88 321.6L608 341.92c13.92 3.52 78.72 32 64 89.44a68 68 0 0 1-71.2 52.8 96 96 0 0 1-19.68-2.08l-89.44-22.4z m-51.36 210.08l126.72 32a69.6 69.6 0 0 1 48 88.96c-11.36 45.76-56.32 55.84-78.56 55.84a38.24 38.24 0 0 1-9.76-0.96l-122.4-30.4z');
+        path.setAttribute('fill', 'rgba(247, 147, 26, 0.5)'); // 保持淡橙色
+        path.setAttribute('stroke', 'rgba(247, 147, 26, 0.8)'); // 保持描边
+        path.setAttribute('stroke-width', '0.5');
+        bitcoin.appendChild(path);
+        container.appendChild(bitcoin);
+
+        // 随机设置位置和动画参数
+        const startX = Math.random() * 100; // 水平起始位置（0%-100%）
+        const animationDelay = Math.random() * 15; // 动画延迟（0-15秒）
+        const duration = 20 + Math.random() * 20; // 动画持续时间（20-40秒）
+        const floatX = (Math.random() - 0.5) * 50; // 水平漂移范围（-25%到25%）
+        const floatRotate = (Math.random() - 0.5) * 360; // 旋转范围（-180°到180°）
+        const size = 1.5 + Math.random() * 2.5; // 图标大小（1.5em-4em）
+        const opacity = 0.4 + Math.random() * 0.6; // 不透明度（0.4-1）
+
+        // 应用样式
+        bitcoin.style.left = `${startX}%`;
+        bitcoin.style.top = '-10%'; // 从屏幕顶部外开始
+        bitcoin.style.animationDelay = `${animationDelay}s`;
+        bitcoin.style.animationDuration = `${duration}s`;
+        bitcoin.style.setProperty('--float-x', `${floatX}vw`); // 水平漂移变量
+        bitcoin.style.setProperty('--float-rotate', `${floatRotate}deg`); // 旋转变量
+        bitcoin.style.fontSize = `${size}em`;
+        bitcoin.style.opacity = opacity;
+        bitcoin.style.color = '#f7931a'; // 比特币橙黄色
+      }
+    },
+
+    async fetchDailyChangePercentage() {
+      let totalAmount = 0;
+      let weightedSum = 0;
+
+      // 并发拉取所有投资项目的 change_percent
+      const promises = this.portfolioItems.map(async item => {
+        let url = '';
+        if (item.investmentType === 'stock') {
+          url = `http://localhost:3000/api/stocks/${item.investmentCode}/`;
+        } else if (item.investmentType === 'fund') {
+          url = `http://localhost:3000/api/funds/${item.investmentCode}/`;
+        } else {
+          return;
+        }
+
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          // change_percent 可能为字符串
+          const percent = Number(data.change_percent);
+          const amount = Number(item.investmentAmount);
+          if (!isNaN(percent) && !isNaN(amount)) {
+            weightedSum += percent * amount;
+            totalAmount += amount;
+          }
+        } catch (e) {
+          // 忽略异常
+        }
+      });
+
+      await Promise.all(promises);
+
+      // 计算加权平均
+      if (totalAmount > 0) {
+        this.dailyChangePercentage = (weightedSum / totalAmount).toFixed(2);
+      } else {
+        this.dailyChangePercentage = '0.00';
+      }
+    },
+
     validateStockCode() {
       if (!this.selectedStockCode) {
         this.stockCodeError = '请输入股票代码';
@@ -443,6 +567,8 @@ export default {
       if (!Array.isArray(data)) data = [data];
       this.portfolioItems = this.mergePortfolioItems(data); // ⭐合并
       this.filterPortfolio();
+      // ⚡️ 拉取完组合后自动刷新涨跌率
+      await this.fetchDailyChangePercentage();
     },
 
     formatCurrency(val) {
@@ -455,7 +581,8 @@ export default {
       this.allStocks = (await res.json()).map(item => ({
         ...item,
         type: 'stock'
-      }));cd
+      }));
+      cd
     },
     async fetchFunds() {
       const res = await fetch('http://localhost:3000/api/funds/all');
@@ -487,9 +614,57 @@ export default {
       this.$refs['investment-name']?.blur?.();
     },
 
+    async fetchLatestPrice(type, symbol) {
+      if (!type || !symbol) return null;
+      let url, field;
+      if (type === 'stock') {
+        url = `http://localhost:3000/api/stocks/${symbol}/`;
+        field = 'latest_price';
+      } else if (type === 'fund') {
+        url = `http://localhost:3000/api/funds/${symbol}/`;
+        field = 'latest_net_value';
+      } else {
+        return null;
+      }
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        return Number(data[field]) || null;
+      } catch (err) {
+        return null;
+      }
+    },
+    async updateLatestPrice() {
+      const { type, symbol } = this.newInvestment;
+      if (!type || !symbol) {
+        this.latestPrice = null;
+        return;
+      }
+      this.latestPrice = await this.fetchLatestPrice(type, symbol);
+    },
     async addInvestment() {
       const username = getCurrentUsername(); // 随时取
       console.log('当前用户名:', username);
+
+      const {type, symbol, amount, name, purchaseDate} = this.newInvestment;
+      // 校验
+      if (!type || !symbol || !amount || !name) {
+        alert("请填写完整投资信息");
+        return;
+      }
+      // 检查当前单价
+      if (this.latestPrice === null || isNaN(this.latestPrice)) {
+        alert("无法获取最新价格或净值，请检查代码");
+        return;
+      }
+
+      // 计算总金额
+      const totalAmount = Number(amount) * Number(this.latestPrice);
+
+
+      // // 2. 计算实际金额
+      // const totalAmount = Number(amount) * latestPrice;
+
 
       // const username = 'Allen'; // 随时取
       // console.log('当前用户名:', username);
@@ -504,7 +679,8 @@ export default {
         investmentType: this.newInvestment.type,
         investmentName: this.newInvestment.name,
         investmentCode: this.newInvestment.symbol,
-        investmentAmount: Number(this.newInvestment.amount),
+        // investmentAmount: Number(this.newInvestment.amount),
+        investmentAmount: totalAmount,
         investmentDate: this.newInvestment.purchaseDate
       };
       try {
@@ -526,6 +702,7 @@ export default {
             purchaseDate: new Date().toISOString().split('T')[0]
           };
           this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
+          await this.fetchDailyChangePercentage();  // 新增
 
         } else {
           alert("添加有误：" + (result.message || "请检查数据"));
@@ -560,6 +737,7 @@ export default {
           this.showDeleteModal = false;
           this.itemToDelete = null;
           this.initAllocationRoseChart(); // ✨异步刷新玫瑰图
+          await this.fetchDailyChangePercentage();  // 新增
 
         } else {
           alert('删除失败：' + (result.message || '未知错误'));
@@ -738,8 +916,8 @@ export default {
         xAxis: {type: 'category', data: dates, boundaryGap: false},
         yAxis: {type: 'value', min, max, boundaryGap: [0, '100%']},
         dataZoom: [
-          { type: 'inside', start: 0, end: 100 },
-          { start: 80, end: 100 }
+          {type: 'inside', start: 0, end: 100},
+          {start: 80, end: 100}
         ],
 
         series: [
@@ -828,7 +1006,7 @@ export default {
         toolbox: {
           show: true,
           feature: {
-            saveAsImage: { show: true }
+            saveAsImage: {show: true}
           }
         },
         legend: {
@@ -882,10 +1060,95 @@ export default {
 };
 </script>
 
+<style>
+/* 比特币动画样式放在非scoped的style中 */
+.bitcoin-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bitcoin-icon {
+  position: absolute;
+  font-size: 2em;
+  color: rgba(247, 147, 26, 0.5); /* 稍微提高透明度，更明显 */
+  animation: float 10s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8; /* 提高显示时的透明度 */
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh) translateX(var(--float-x)) rotate(var(--float-rotate));
+    opacity: 0;
+  }
+}
+</style>
+
 <style scoped>
 
+.stock-code-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.custom-input {
+  height: 30px;
+  padding: 0 16px;
+  border: 1.5px solid #bcdfff;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #f7fafd;
+  color: #2c3e50;
+  width: 180px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.custom-input:focus {
+  border-color: #3aa6ff;
+  background: #e6f7ff;
+  box-shadow: 0 0 4px 0 #7cc8ff;
+}
+
+.error-text-inline {
+  color: #e54545;
+  font-size: 15px;
+  background: #ffeaea;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-weight: 500;
+  margin-left: 3px;
+  min-width: 120px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  position: relative;
+  top: 0;
+  /* 不再使用 block 显示 */
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+}
+
+
 .highlight {
-  color: red;     /* 高亮色，也可以用 #ff9800 #2196f3 等 */
+  color: red; /* 高亮色，也可以用 #ff9800 #2196f3 等 */
   font-weight: bold;
   font-size: 17px;
   padding: 0 2px;
@@ -896,6 +1159,7 @@ export default {
   min-height: 100vh;
   padding: 0;
 }
+
 .dashboard-container {
   display: flex;
   gap: 32px;
@@ -930,7 +1194,7 @@ export default {
 
 /* 卡片悬浮特效 */
 .card:hover {
-  box-shadow: 0 12px 36px 0 rgba(32, 80, 190, 0.14), 0 8px 24px 0 rgba(52,152,219,0.14);
+  box-shadow: 0 12px 36px 0 rgba(32, 80, 190, 0.14), 0 8px 24px 0 rgba(52, 152, 219, 0.14);
   transform: translateY(-2px) scale(1.013);
   z-index: 2;
 }
@@ -940,8 +1204,10 @@ export default {
   content: "";
   display: block;
   position: absolute;
-  left: 50%; bottom: -15px;
-  width: 72%; height: 15px;
+  left: 50%;
+  bottom: -15px;
+  width: 72%;
+  height: 15px;
   background: radial-gradient(ellipse at center, #7ec8ff2b 0%, transparent 90%);
   transform: translateX(-50%);
   pointer-events: none;
@@ -966,16 +1232,19 @@ export default {
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
+
 .portfolio-list-scroll::-webkit-scrollbar {
   width: 8px;
   background: #f3f8ff;
   border-radius: 6px;
 }
+
 .portfolio-list-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #9ad8ff 0%, #63a4ff 90%);
   border-radius: 6px;
   min-height: 24px;
 }
+
 .portfolio-list-scroll::-webkit-scrollbar-thumb:hover {
   background: #2196f3;
 }
@@ -995,15 +1264,18 @@ export default {
   box-shadow: 0 3px 14px #2ecc7140;
   transition: background 0.18s, box-shadow 0.16s, transform 0.14s;
 }
+
 .add-btn:hover {
   background: linear-gradient(90deg, #15b6c7 0%, #1ea75a 100%);
   box-shadow: 0 6px 24px #27d5e333;
   transform: translateY(-1px) scale(1.03);
 }
+
 /* 下拉列表悬浮 */
 .suggestion-list li {
   transition: background 0.18s, color 0.15s;
 }
+
 .suggestion-list li:hover {
   background: #e4f3ff;
   color: #2196f3;
@@ -1020,7 +1292,7 @@ export default {
 /* ...你的其它样式保持原有即可... */
 
 .sell-btn {
-  background: linear-gradient(90deg,#2196f3,#1769aa);
+  background: linear-gradient(90deg, #2196f3, #1769aa);
   border: none;
   color: #fff;
   border-radius: 24px;
@@ -1031,10 +1303,11 @@ export default {
   align-items: center;
   cursor: pointer;
   transition: background .2s;
-  box-shadow: 0 1px 6px rgba(33,150,243,0.09);
+  box-shadow: 0 1px 6px rgba(33, 150, 243, 0.09);
 }
+
 .sell-btn:hover {
-  background: linear-gradient(90deg,#1976d2,#0d47a1);
+  background: linear-gradient(90deg, #1976d2, #0d47a1);
 }
 
 
@@ -1052,6 +1325,7 @@ export default {
   box-sizing: border-box;
   transition: border-color 0.2s;
 }
+
 .date-picker:focus {
   border-color: #6ea8fe;
   background: #fff;
@@ -1113,11 +1387,11 @@ export default {
 .header {
   margin-bottom: 30px;
   text-align: center;
-  background: linear-gradient(to right, #2980b9, #6dd5fa);
+  background: #7dace4 100%;
   padding: 30px 20px;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  color: white;
+  color: #2c3e50;
   transition: all 0.3s ease;
 }
 
@@ -1125,8 +1399,9 @@ export default {
   margin-bottom: 25px;
   font-size: 30px;
   font-weight: bold;
-  color: #fff;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  color: #222;
+  text-shadow: 0 2px 8px rgba(77, 124, 255, 0.10);
+  letter-spacing: 1px;
 }
 
 .portfolio-summary {
@@ -1719,7 +1994,7 @@ h2 {
 .form-group input,
 .form-group select {
   width: 100%;
-  min-width: 0;         /* 允许收缩 */
+  min-width: 0; /* 允许收缩 */
   box-sizing: border-box;
   font-size: 16px;
 }
