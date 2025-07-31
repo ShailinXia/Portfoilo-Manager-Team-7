@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+log/
+**/db/
+.idea/
+server.js
+**/.vscode/
+structure.txt
+images/
+*.http
+dummydata/
+*.db-journal
+*.db
