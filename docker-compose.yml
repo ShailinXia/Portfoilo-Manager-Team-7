@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile.backend
       network: host  # ⬅️ 使用主机网络模式，避免跨域问题
-    image: backend:2.0
+    image: backend:latest
     ports:
       - "3000:3000"
     volumes:
@@ -22,7 +22,7 @@ services:
     # working_dir: /app/frontend # ⬅️ 指定工作目录（非常重要）
     # volumes:
     #   - ./frontend:/app/frontend
-    image: frontend:2.0
+    image: frontend:latest
     ports:
       - "5173:80"            # Vite 默认开发端口（Vue3 项目用），按需修改
     restart: unless-stopped
