@@ -3,7 +3,7 @@
     <!-- 1. 比特币漂浮容器：放在根元素最前面 -->
     <div class="bitcoin-container pointer-events-none absolute inset-0 z-0"></div>
     <div class="header">
-      <h1>投资组合管理 Portfolio Management - {{ currentUsername }}</h1>
+      <h1> {{ currentUsername }} - 投资组合管理 Portfolio Management </h1>
       <div class="portfolio-summary">
         <div class="summary-card">
           <h3>当前投资总金额</h3>
@@ -27,7 +27,7 @@
         </div>
         <div class="summary-card">
           <h3>当前涨跌率</h3>
-          <p class="value">{{ dailyChangePercentage }}%</p>
+          <p class="value" :class="{ positive: totalProfit >= 0, negative: totalProfit < 0 }">{{ dailyChangePercentage }}%</p>
         </div>
       </div>
     </div>
@@ -149,7 +149,7 @@
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <!--            <span style="font-size:22px;font-weight:bold;color:#2c3e50;">股票历史数据</span>-->
 
-            <h2>股票历史数据</h2>
+            <h2 >股票历史数据</h2>
             <div class="stock-code-row">
               <input
                   type="text"
@@ -531,7 +531,7 @@ export default {
         // 随机设置位置和动画参数
         const startX = Math.random() * 100; // 水平起始位置（0%-100%）
         const animationDelay = Math.random() * 5; // 动画延迟（0-15秒）
-        const duration = 5 + Math.random() * 5; // 动画持续时间（20-40秒）
+        const duration = 2 + Math.random() * 5; // 动画持续时间（20-40秒）
         const floatX = (Math.random() - 0.5) * 50; // 水平漂移范围（-25%到25%）
         const floatRotate = (Math.random() - 0.5) * 360; // 旋转范围（-180°到180°）
         const size = 1.5 + Math.random() * 2.5; // 图标大小（1.5em-4em）
