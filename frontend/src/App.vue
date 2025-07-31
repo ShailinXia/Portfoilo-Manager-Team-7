@@ -1,6 +1,8 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import LoginView from './views/LoginView.vue';
+const router = useRouter();
 
 const isAuthenticated = ref(false);
 const activeTab = ref('portfolio');
@@ -15,12 +17,20 @@ const checkAuthStatus = () => {
 };
 
 
-// 处理退出登录
+// // 处理退出登录
+// const handleLogout = () => {
+//   localStorage.removeItem('isAuthenticated');
+//   localStorage.removeItem('currentUsername');
+//   isAuthenticated.value = false;
+//   activeTab.value = 'portfolio'; // 重置选项卡
+// };
+
+
 const handleLogout = () => {
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('currentUsername');
   isAuthenticated.value = false;
-  activeTab.value = 'portfolio'; // 重置选项卡
+  router.replace('/login');
 };
 
 </script>

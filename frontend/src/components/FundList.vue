@@ -7,6 +7,7 @@
 
     <div class="search-bar">
       <input type="text" v-model="searchQuery" placeholder="搜索基金名称或代码..." @input="filterFunds" @focus="clearJumpPage" />
+      <button @click="clearSearch" class="clear-btn"> 清除</button>
     </div>
 
     <div class="fund-grid">
@@ -106,6 +107,13 @@ export default {
     clearJumpPage() {
       this.jumpPage = null;
     },
+        async clearSearch() {
+      this.searchQuery = '';
+      this.jumpPage = null;
+      this.currentPage = 1;
+      this.isFiltering = false;
+      await this.fetchStocks();
+    },
     async fetchFunds() {
       this.loading = true;
       this.error = null;
@@ -118,6 +126,7 @@ export default {
 
         // 假设后端返回格式为：{ data: [...], total: 123 }
         this.pagedFunds = response.data;
+        this.totalItems = 2686;
         this.totalPages = Math.ceil(this.totalItems / this.pageSize);
       } catch (err) {
         console.error('获取股票数据失败:', err);
@@ -228,15 +237,33 @@ h1 {
 }
 
 .search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
 .search-bar input {
-  width: 100%;
+  flex: 1;
   padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
+}
+
+.clear-btn {
+  padding: 8px 16px;
+  background-color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.clear-btn:hover {
+  background-color: #333;
+  color: #fff;
 }
 
 .pagination-controls {

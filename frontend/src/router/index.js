@@ -27,7 +27,7 @@ import LoginView from "../views/LoginView.vue";
 //     }
 // ];
 const routes = [
-  { path: "/login", component: LoginView },
+  { path: "/login", component: LoginView, meta: { requiresAuth: true } },
   {
     path: "/portfolio",
     component: PortfolioManager,
@@ -46,8 +46,14 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next("/");
+  // if (to.meta.requiresAuth && !isAuthenticated) {
+  //   next("/");
+  // } else {
+  //   next();
+  // }
+
+  if (to.path !== "/login" && !isAuthenticated) {
+    next("/login");
   } else {
     next();
   }
