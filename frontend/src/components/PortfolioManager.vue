@@ -526,8 +526,8 @@ export default {
 
         // 随机设置位置和动画参数
         const startX = Math.random() * 100; // 水平起始位置（0%-100%）
-        const animationDelay = Math.random() * 15; // 动画延迟（0-15秒）
-        const duration = 20 + Math.random() * 20; // 动画持续时间（20-40秒）
+        const animationDelay = Math.random() * 5; // 动画延迟（0-15秒）
+        const duration = 5 + Math.random() * 5; // 动画持续时间（20-40秒）
         const floatX = (Math.random() - 0.5) * 50; // 水平漂移范围（-25%到25%）
         const floatRotate = (Math.random() - 0.5) * 360; // 旋转范围（-180°到180°）
         const size = 1.5 + Math.random() * 2.5; // 图标大小（1.5em-4em）
